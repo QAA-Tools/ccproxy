@@ -1,8 +1,8 @@
-# ccproxy
+# Claude Code Proxy
 
 [简体中文](README_zh.md)
 
-Lightweight Claude Code proxy with a local Web UI.
+Claude Code Proxy — lightweight, direct reverse proxy to switch providers without restarting Claude.
 
 ![demo](demo.png)
 
@@ -72,4 +72,3 @@ These overrides only affect runtime routing. Update `config.json` and click **Re
 ```
 
 Logs: `ccproxy.log`  |  PID: `ccproxy.pid`
-

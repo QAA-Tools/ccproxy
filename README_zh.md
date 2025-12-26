@@ -1,6 +1,7 @@
-# ccproxy 使用说明
+# Claude Code Proxy
 
-这是一个轻量的 Claude Code 代理，带本地 Web UI。
+Claude Code Proxy — 轻量直连反向代理，无需重启即可切换供应商。
+
 
 ## 快速开始
 
@@ -68,5 +69,5 @@ http://127.0.0.1:3456
 ./run.sh status
 ```
 
-???`ccproxy.log`  |  PID?`ccproxy.pid`
+Logs: `ccproxy.log`  |  PID: `ccproxy.pid`
 
