@@ -14,7 +14,11 @@ Claude Code Proxy — lightweight, direct reverse proxy to switch providers with
 copy config.in.json config.json
 ```
 
-2) Edit `config.json` with your provider info.
+2) Edit `config.json`:
+
+- `HOST` / `PORT`: Proxy server address (e.g., `127.0.0.1:3456`)
+- `APIKEY`: Authentication key for Claude Code - also used as Web UI password
+- `Providers`: Your upstream provider list
 
 3) Start proxy (default config is `config.json`):
 
@@ -22,15 +26,7 @@ copy config.in.json config.json
 python ccproxy.py --config config.json
 ```
 
-4) Open the UI (browser will ask for Basic Auth):
-
-```
-http://127.0.0.1:3456
-```
-
-Password is your `APIKEY` from the config file (username can be anything; blank is not allowed).
-
-5) Claude Code config example:
+4) Configure Claude Code to use this proxy:
 
 ```json
 {
@@ -40,6 +36,16 @@ Password is your `APIKEY` from the config file (username can be anything; blank 
   }
 }
 ```
+
+Replace `<APIKEY>` with the `APIKEY` value from your `config.json`.
+
+5) Open the Web UI to switch providers:
+
+```
+http://127.0.0.1:3456
+```
+
+Browser will ask for Basic Auth - password is your `APIKEY` (username can be anything).
 
 ## Config files
 
