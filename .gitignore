@@ -1,0 +1,5 @@
+config.json
+proxy_state.json
+*.log
+*.tmp
+.env
