@@ -1,6 +1,9 @@
 ccr.in.json
 config.json
 proxy_state.json
+ccproxy.pid
+ccproxy.log
+ccproxy.err
 *.log
 *.tmp
 .env

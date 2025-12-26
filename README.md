@@ -2,8 +2,9 @@
 
 [简体中文](README_zh.md)
 
-
 Lightweight Claude Code proxy with a local Web UI.
+
+![demo](demo.png)
 
 ## Quick start
 
@@ -27,7 +28,7 @@ python ccproxy.py --config config.json
 http://127.0.0.1:3456
 ```
 
-Password is your `APIKEY` from the config file (username can be anything).
+Password is your `APIKEY` from the config file (username can be anything; blank is not allowed).
 
 5) Claude Code config example:
 
@@ -59,5 +60,16 @@ These overrides only affect runtime routing. Update `config.json` and click **Re
 
 - Thanks to https://github.com/musistudio/claude-code-router
 - `config.json` follows the [ccr](https://github.com/musistudio/claude-code-router) format, but this project does not provide model conversion (OpenAI/DeepSeek/etc.).
-- This proxy is a simple reverse proxy, intended for upstreams that already expose Claude-compatible endpoints (public gateways/official/GLM, etc.).
+- This proxy is a simple reverse proxy, intended for upstreams that already expose Claude-compatible endpoints (public gateways/official/GLM, etc.). Use `/model <name>` in Claude Code to select a model per provider (the UI copy button provides the exact command).
+
+## Background run (Linux)
+
+```bash
+./run.sh start
+./run.sh stop
+./run.sh restart
+./run.sh status
+```
+
+Logs: `ccproxy.log`  |  PID: `ccproxy.pid`
 

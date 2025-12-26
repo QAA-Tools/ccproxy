@@ -57,5 +57,16 @@ http://127.0.0.1:3456
 
 - 致谢：https://github.com/musistudio/claude-code-router
 - `config.json` 采用 [ccr](https://github.com/musistudio/claude-code-router) 的格式，但不包含 openai/deepseek 等模型转换为 Claude Code 的功能。
-- 本项目只是简单反向代理，仅适用于已提供 Claude 兼容端点的上游（公益站/官方/GLM 等）。
+- 本项目只是简单反向代理，仅适用于已提供 Claude 兼容端点的上游（公益站/官方/GLM 等）。使用 Claude Code 时，需要输入 `/model <模型名>` 选择不同 provider 的指定模型（UI 的 Copy 按钮可以直接复制）。
+
+## ?????Linux?
+
+```bash
+./run.sh start
+./run.sh stop
+./run.sh restart
+./run.sh status
+```
+
+???`ccproxy.log`  |  PID?`ccproxy.pid`
 
