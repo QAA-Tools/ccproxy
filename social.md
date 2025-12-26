@@ -9,20 +9,66 @@
 
 因为经常要在 Linux 服务器上跑（没有图形界面，cc-switch 不适合），就想要个更简单的方案：JSON 配置 + 不重启 CC 就能切换 + 自动拉模型列表。
 
-所以让 Codex 搓了这个：**Claude Code Proxy**
+所以让 Claude 搓了这个：**Claude Code Proxy**
 
-用了两天还算稳定，仓库地址（就一个 py 脚本）：https://github.com/QAA-Tools/ccproxy
+用了几天还算稳定，就一个 py 脚本，核心功能：
+- Web UI 切换供应商，无需重启 CC
+- 自动从上游拉取模型列表（`/v1/models`）
+- JSON 配置热重载
+- 支持自定义认证方式（某些站点需要特殊 Header/Query 参数）
 
+## 快速开始
+
+**仓库地址：** https://github.com/QAA-Tools/ccproxy
+**使用文档：** https://qaa-tools.github.io/ccproxy/
+
+1. 复制配置文件：
+```bash
+copy config.in.json config.json  # Windows
+cp config.in.json config.json    # Linux/macOS
 ```
+
+2. 编辑 `config.json`，填入你的公益站信息：
+```json
+{
+  "HOST": "0.0.0.0",
+  "PORT": 3456,
+  "APIKEY": "sk-your-local-ui-key",
+  "Providers": [
+    {
+      "name": "站点1",
+      "api_base_url": "https://api.example.com/v1/messages",
+      "api_key": "sk-provider-key-1",
+      "models": []
+    }
+  ]
+}
+```
+
+3. 启动代理：
+```bash
 python ccproxy.py --config config.json
 ```
 
-然后浏览器打开 `http://127.0.0.1:3456`
+4. 修改 Claude Code 配置（`~/.claude/config.json` 或 `%USERPROFILE%\.claude\config.json`）：
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-your-local-ui-key",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456"
+  }
+}
+```
+**注意：** `ANTHROPIC_AUTH_TOKEN` 要和上面的 `APIKEY` 一致。改完重启 CC。
 
-- 网页上选 provider
-- **刷新获取模型列表**（从上游 `/v1/models` 拉取）
-- 复制 `/model xxx` 命令粘贴到 CC 即可切换模型
+5. 浏览器打开 `http://127.0.0.1:3456`，用 `APIKEY` 作为密码登录（用户名随便填）
+
+## 使用
+
+- 下拉选择 provider，立即生效
+- 点 **Refresh** 按钮自动拉取上游模型列表
+- 选模型后点 **Copy**，粘贴 `/model xxx` 命令到 CC 切换模型
 - 上游挂了就回网页换一个
-- 改了 config.json 网页上点 Reload 重新载入
+- 改了 `config.json` 点 **Reload Config** 重新载入，不用重启代理
 
-就是个轻量反向代理，配置格式参考 ccr（完全兼容）。
+配置格式兼容 ccr，但不包含模型转换功能（只支持原生 Claude 格式的 API）。
