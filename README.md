@@ -2,7 +2,9 @@
 
 [简体中文](README_zh.md)
 
-Claude Code Proxy — lightweight, direct reverse proxy to switch providers without restarting Claude.
+Claude Code Proxy is a lightweight reverse proxy tool designed for Claude Code users. Switch between multiple Claude API providers via Web UI, with automatic model list fetching, JSON config hot-reload, without restarting Claude Code.
+
+**Use cases:** Manage multiple public/forwarding API keys, test endpoint stability, centralize Claude API access management.
 
 ![demo](demo.png)
 

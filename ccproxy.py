@@ -252,6 +252,30 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _read_body(self) -> bytes:
+        transfer_encoding = self.headers.get("Transfer-Encoding", "")
+        if "chunked" in transfer_encoding.lower():
+            chunks: List[bytes] = []
+            while True:
+                line = self.rfile.readline()
+                if not line:
+                    break
+                size_str = line.split(b";", 1)[0].strip()
+                try:
+                    size = int(size_str, 16)
+                except ValueError:
+                    break
+                if size == 0:
+                    # Drain trailing headers after last chunk.
+                    while True:
+                        tail = self.rfile.readline()
+                        if not tail or tail in (b"\r\n", b"\n"):
+                            break
+                    break
+                data = self.rfile.read(size)
+                chunks.append(data)
+                # Consume the trailing CRLF after each chunk.
+                self.rfile.read(2)
+            return b"".join(chunks)
         length = int(self.headers.get("Content-Length", "0"))
         return self.rfile.read(length) if length > 0 else b""
 
@@ -411,7 +435,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             header_name = override.get("token_header") or provider.get("token_header", "Authorization")
             header_format = override.get("token_header_format") or provider.get("token_header_format", "Bearer {token}")
             headers[header_name] = header_format.format(token=token)
-        timeout = state.get_timeout()
+        timeout = (10.0, state.get_timeout())
 
         try:
             resp = requests.post(

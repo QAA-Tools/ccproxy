@@ -1,6 +1,8 @@
 # Claude Code Proxy
 
-Claude Code Proxy — 轻量直连反向代理，无需重启即可切换供应商。
+Claude Code Proxy 是一个轻量级反向代理工具，专为 Claude Code 用户设计。通过 Web UI 在多个 Claude API 供应商之间快速切换，支持自动拉取模型列表，JSON 配置热重载，无需重启 Claude Code。
+
+**适用场景：** 管理多个公益站/转发站 API 密钥，测试不同端点的稳定性，统一管理多个 Claude API 访问点。
 
 
 ## 快速开始
