@@ -14,6 +14,7 @@ import json
 import logging
 import threading
 import urllib.parse
+import time
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -417,15 +418,31 @@ class ProxyHandler(BaseHTTPRequestHandler):
             upstream_url = append_token(upstream_url, token, token_param)
         if not upstream_url:
             return self._send_json({"error": "provider_url_missing"}, status=502)
+
+        provider_name = provider.get("name", "")
+        start_time = time.time()
+        logging.info("-" * 60)
         logging.info(
             "proxy: provider=%s token_param=%s token_len=%s url=%s",
-            provider.get("name", ""),
+            provider_name,
             token_param,
             len(token),
             urllib.parse.urlsplit(upstream_url)._replace(query="").geturl(),
         )
 
         body = self._read_body()
+        # 显示请求内容预览
+        try:
+            req_text = body.decode("utf-8", errors="replace")
+            req_preview_len = 300
+            if len(req_text) <= req_preview_len:
+                req_preview = req_text
+            else:
+                req_preview = req_text[:req_preview_len] + "..."
+            req_preview = req_preview.replace("\n", "\\n").replace("\r", "")
+            logging.info("proxy: request=%s", req_preview)
+        except Exception:
+            pass
         headers = {
             k: v
             for k, v in self.headers.items()
@@ -446,11 +463,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 timeout=timeout,
             )
         except requests.RequestException as exc:
+            elapsed = time.time() - start_time
+            logging.info("proxy: provider=%s error=%s elapsed=%.1fs", provider_name, exc, elapsed)
             return self._send_json({"error": "upstream_error", "detail": str(exc)}, status=502)
 
         logging.info(
             "proxy: provider=%s status=%s bytes=%s",
-            provider.get("name", ""),
+            provider_name,
             resp.status_code,
             resp.headers.get("Content-Length", "?"),
         )
@@ -461,13 +480,35 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 continue
             self.send_header(key, value)
         self.end_headers()
+
+        total_bytes = 0
+        all_chunks = []
         try:
             for chunk in resp.iter_content(chunk_size=8192):
                 if chunk:
                     self.wfile.write(chunk)
                     self.wfile.flush()
+                    total_bytes += len(chunk)
+                    all_chunks.append(chunk)
         except BrokenPipeError:
             pass
+
+        elapsed = time.time() - start_time
+
+        # 显示内容预览
+        try:
+            text = b"".join(all_chunks).decode("utf-8", errors="replace")
+            preview_len = 500
+            if len(text) <= preview_len * 2:
+                preview = text
+            else:
+                preview = text[:preview_len] + " ... " + text[-preview_len:]
+            preview = preview.replace("\n", "\\n").replace("\r", "")
+            logging.info("proxy: provider=%s preview=%s", provider_name, preview)
+        except Exception:
+            pass
+
+        logging.info("proxy: provider=%s completed bytes=%s elapsed=%.1fs", provider_name, total_bytes, elapsed)
 
     def _extract_client_token(self) -> str:
         header_map = {k.lower(): v for k, v in self.headers.items()}
