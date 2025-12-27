@@ -206,8 +206,8 @@
         <!-- 简介 -->
         <section id="intro">
             <h2>简介</h2>
-            <p>Claude Code Proxy 是一个轻量级反向代理工具，专为 Claude Code 用户设计。通过 Web UI 在多个 Claude API 供应商之间快速切换，支持自动拉取模型列表，JSON 配置热重载，无需重启 Claude Code。</p>
-            <p><strong>适用场景：</strong>管理多个公益站/转发站 API 密钥，测试不同端点的稳定性，统一管理多个 Claude API 访问点。</p>
+            <p>轻量级 Claude API 反向代理工具，通过 Web 切换管理多个供应商，支持模型发现、快速复制、热重载配置。</p>
+            <p><strong>适用场景：</strong>在多个公益站/转发站之间快速切换，无需重启 Claude Code。</p>
         </section>
 
         <!-- 快速开始 -->
@@ -459,7 +459,7 @@
             <p><strong>A:</strong> 编辑 <code>config.json</code>，在 <code>Providers</code> 数组中添加新条目，然后在 Web UI 点击 <code>Reload Config</code> 按钮即可。</p>
 
             <h3>Q: 配置文件格式兼容性？</h3>
-            <p><strong>A:</strong> <code>config.json</code> 采用 <a href="https://github.com/musistudio/claude-code-router">ccr</a> 的配置格式，但不包含模型转换功能。</p>
+            <p><strong>A:</strong> <code>config.json</code> 格式兼容 <a href="https://github.com/musistudio/claude-code-router">ccr</a> 和 ccproxy，可通用。本项目不包含模型转换功能。</p>
         </section>
     </div>
 

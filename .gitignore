@@ -1,3 +1,4 @@
+*.sql
 .claude
 ccr.in.json
 config.json
