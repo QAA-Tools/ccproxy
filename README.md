@@ -62,7 +62,10 @@ python ccproxy.py --config config.json
       "name": "Provider Name",
       "api_base_url": "https://api.example.com/v1/messages",
       "api_key": "sk-provider-key",
-      "models": [],  // Leave empty, use Web UI refresh button to auto-fetch
+      "models": [
+        "claude-sonnet-4-5-20250929",
+        "claude-opus-4-5-20251101"
+      ],
       "comment": "Notes"
     }
   ]

@@ -62,7 +62,10 @@ python ccproxy.py --config config.json
       "name": "供应商名称",
       "api_base_url": "https://api.example.com/v1/messages",
       "api_key": "sk-provider-key",
-      "models": [],  // 留空，用 Web UI 刷新按钮自动获取
+      "models": [
+        "claude-sonnet-4-5-20250929",
+        "claude-opus-4-5-20251101"
+      ],
       "comment": "备注"
     }
   ]
