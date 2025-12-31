@@ -328,6 +328,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 "selected_override": state.get_provider_override(selected.get("name", "")) if selected else {},
                 "header_overrides": list(state.get_header_overrides().keys()),
                 "request_overrides": list(state.get_request_overrides().keys()),
+                "global_env_models": state._config.get("env-models", {}),
             }
             return self._send_json(payload)
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")

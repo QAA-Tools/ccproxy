@@ -3,6 +3,8 @@ const selectUrl = "/api/select";
 const refreshUrl = "/api/refresh-models";
 const authUrl = "/api/provider-auth";
 
+let globalEnvModels = {};
+
 const providerListEl = document.getElementById("providerList");
 const modelListEl = document.getElementById("modelList");
 const modelItemsEl = document.getElementById("modelItems");
@@ -52,6 +54,54 @@ async function copyText(text) {
   }
 }
 
+function extractBaseUrl(apiBaseUrl) {
+  if (apiBaseUrl.includes("/anthropic/v1/messages")) {
+    return apiBaseUrl.replace("/anthropic/v1/messages", "");
+  }
+  if (apiBaseUrl.includes("/v1/chat/completions")) {
+    return apiBaseUrl.replace("/v1/chat/completions", "");
+  }
+  if (apiBaseUrl.includes("/v1/messages")) {
+    return apiBaseUrl.replace("/v1/messages", "");
+  }
+  return apiBaseUrl.replace(/\/$/, "");
+}
+
+async function copySettings(provider) {
+  const baseUrl = extractBaseUrl(provider.api_base_url || "");
+  const apiKey = provider.api_key || "";
+
+  // 构建 env 配置
+  const env = {
+    "ANTHROPIC_AUTH_TOKEN": apiKey,
+    "ANTHROPIC_BASE_URL": baseUrl
+  };
+
+  // 合并 env-models 配置
+  // 优先级：provider 级别 > 全局级别
+  const envModels = {};
+  if (globalEnvModels && Object.keys(globalEnvModels).length > 0) {
+    Object.assign(envModels, globalEnvModels);
+  }
+  if (provider["env-models"] && Object.keys(provider["env-models"]).length > 0) {
+    Object.assign(envModels, provider["env-models"]);
+  }
+
+  // 将 env-models 添加到 env
+  if (Object.keys(envModels).length > 0) {
+    Object.assign(env, envModels);
+  }
+
+  const settings = {
+    "env": env,
+    "includeCoAuthoredBy": false
+  };
+
+  const text = JSON.stringify(settings, null, 2);
+  await copyText(text);
+}
+
+
 function renderProviders(state) {
   providerListEl.innerHTML = "";
   const selected = state.selected_provider;
@@ -89,6 +139,14 @@ function renderProviders(state) {
     const actions = document.createElement("div");
     actions.className = "provider-actions";
 
+    const copySettingsBtn = document.createElement("button");
+    copySettingsBtn.className = "mini-btn";
+    copySettingsBtn.textContent = "settings.json";
+    copySettingsBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      copySettings(provider);
+    });
+
     const copyTokenBtn = document.createElement("button");
     copyTokenBtn.className = "mini-btn";
     copyTokenBtn.textContent = "Token";
@@ -105,6 +163,7 @@ function renderProviders(state) {
       copyText(provider.api_base_url || "");
     });
 
+    actions.appendChild(copySettingsBtn);
     actions.appendChild(copyTokenBtn);
     actions.appendChild(copyUrlBtn);
     actions.appendChild(btn);
@@ -328,6 +387,7 @@ async function resetConfig() {
 
 async function refresh() {
   const state = await fetchState();
+  globalEnvModels = state.global_env_models || {};
   const names = (state.providers || []).map((p) => p.name);
   if (!previewProviderName || !names.includes(previewProviderName)) {
     previewProviderName = state.selected_provider;

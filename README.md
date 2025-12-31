@@ -58,6 +58,12 @@ python ccproxy.py --config config.json
   "HOST": "0.0.0.0",
   "PORT": 3456,
   "APIKEY": "sk-your-key",
+  "env-models": {
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-20250514",
+    "ANTHROPIC_MODEL": "claude-sonnet-4-20250514"
+  },
   "HeaderOverrides": {
     "ClaudeCode": {
       "User-Agent": "claude-cli/2.0.76 (external, cli)",
@@ -80,11 +86,25 @@ python ccproxy.py --config config.json
         "claude-sonnet-4-5-20250929",
         "claude-opus-4-5-20251101"
       ],
-      "comment": "Notes"
+      "comment": "Notes",
+      "env-models": {
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "custom-haiku",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "custom-opus",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "custom-sonnet",
+        "ANTHROPIC_MODEL": "custom-sonnet"
+      }
     }
   ]
 }
 ```
+
+**Configuration Notes:**
+- `env-models` (optional) - Model name mapping configuration for Claude Code environment variables
+  - **Global level** (top-level `env-models`): Default model name mapping for all providers
+  - **Provider level** (`env-models` inside Provider): Custom model name mapping for specific provider
+  - **Priority**: Provider-level config overrides global config
+  - **Use case**: Different providers may use different model naming (e.g., `gemini-claude-sonnet-4-5` vs `claude-sonnet-4-20250514`)
+  - Empty `{}` means using Claude Code defaults
 
 **HTTP Overrides:**
 - `HeaderOverrides` - Override request headers (e.g., User-Agent) to spoof as Claude CLI or other clients
@@ -122,10 +142,16 @@ bash tools/ccp2ccr.sh
 ```
 
 **ccp2ccswitch.py** - Convert config to CC Switch SQL format (no need to manually manage providers in GUI)
-- Input: `config.json` | Output: `cc-switch.sql`
+- Input: `config.json` | Output: `cc-switch.sql` or standalone Claude Code config file
 ```bash
+# Export CC Switch SQL format
 bash tools/ccp2ccswitch.sh
 # Or manually: python tools/ccp2ccswitch.py --input config.json --prefix
+
+# Export standalone Claude Code config file (with env-models)
+python tools/ccp2ccswitch.py --export-cc --provider "example-provider1" --output provider1.json
+# Or use --current to specify provider
+python tools/ccp2ccswitch.py --export-cc --current "example-provider1"
 ```
 
 **ccp2cliproxy.py** - Convert config to CLIProxyAPI YAML format

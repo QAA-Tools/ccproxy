@@ -59,6 +59,12 @@ python ccproxy.py --config config.json
   "HOST": "0.0.0.0",
   "PORT": 3456,
   "APIKEY": "sk-your-key",
+  "env-models": {
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-20250514",
+    "ANTHROPIC_MODEL": "claude-sonnet-4-20250514"
+  },
   "HeaderOverrides": {
     "ClaudeCode": {
       "User-Agent": "claude-cli/2.0.76 (external, cli)",
@@ -81,11 +87,25 @@ python ccproxy.py --config config.json
         "claude-sonnet-4-5-20250929",
         "claude-opus-4-5-20251101"
       ],
-      "comment": "备注"
+      "comment": "备注",
+      "env-models": {
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "custom-haiku",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "custom-opus",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "custom-sonnet",
+        "ANTHROPIC_MODEL": "custom-sonnet"
+      }
     }
   ]
 }
 ```
+
+**配置说明：**
+- `env-models`（可选）- 模型名称映射配置，用于 Claude Code 环境变量
+  - **全局级别**（顶层 `env-models`）：作为所有供应商的默认模型名称映射
+  - **供应商级别**（Provider 内的 `env-models`）：为特定供应商定制的模型名称映射
+  - **优先级**：供应商级别的配置会覆盖全局配置
+  - **使用场景**：不同供应商可能使用不同的模型命名（如 `gemini-claude-sonnet-4-5` vs `claude-sonnet-4-20250514`）
+  - 留空 `{}` 表示使用 Claude Code 默认值
 
 **HTTP 覆写说明：**
 - `HeaderOverrides` - 覆写请求头（如 User-Agent），伪装成 Claude CLI 等客户端
@@ -123,10 +143,16 @@ bash tools/ccp2ccr.sh
 ```
 
 **ccp2ccswitch.py** - 转换配置为 CC Switch SQL 格式（无需在 GUI 中手动批量管理供应商）
-- 输入：`config.json` | 输出：`cc-switch.sql`
+- 输入：`config.json` | 输出：`cc-switch.sql` 或独立的 Claude Code 配置文件
 ```bash
+# 导出 CC Switch SQL 格式
 bash tools/ccp2ccswitch.sh
 # 或手动: python tools/ccp2ccswitch.py --input config.json --prefix
+
+# 导出独立的 Claude Code 配置文件（包含 env-models）
+python tools/ccp2ccswitch.py --export-cc --provider "example-provider1" --output provider1.json
+# 或使用 --current 参数指定供应商
+python tools/ccp2ccswitch.py --export-cc --current "example-provider1"
 ```
 
 **ccp2cliproxy.py** - 转换配置为 CLIProxyAPI YAML 格式

@@ -5,6 +5,8 @@
   "_comment_HOST_PORT": "Proxy server address - also serves as Web UI access address (e.g., http://127.0.0.1:3456)",
   "_comment_APIKEY": "Authentication key for Claude Code (ANTHROPIC_AUTH_TOKEN) - also used as Web UI password",
   "_comment_token_in": "Optional: token_in field can be added to providers. Leave empty (or omit) for auto passthrough mode. Use 'header', 'query', or 'both' to override.",
+  "_comment_env-models": "Optional: Global model name mappings for Claude Code. Can be overridden per provider. Leave empty or omit to use defaults.",
+  "env-models": {},
   "_comment": "后期如果cherry studio等客户端无法使用(某些站点进行检测限制时),则根据正常的日志,增加这里的覆写项即可",
   "HeaderOverrides": {
     "ClaudeCode": {
@@ -32,7 +34,13 @@
         "claude-sonnet-4-5-20250929",
         "claude-opus-4-5-20251101"
       ],
-      "comment": "Optional note for this provider"
+      "comment": "Optional note for this provider",
+      "env-models": {
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5-20251101",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-20250514",
+        "ANTHROPIC_MODEL": "claude-sonnet-4-20250514"
+      }
     },
     {
       "name": "example-provider2",
