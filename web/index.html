@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Code Proxy</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Claude Code Proxy</p>
+          <h1>Claude Code Proxy</h1>
+          <div class="hero-actions">
+            <button class="ghost" id="reloadBtn">Reload Config</button>
+            <button class="ghost" id="resetBtn">Reset Config</button>
+          </div>
+        </div>
+        <div class="status" id="statusCard">
+          <div class="status-label">Selected Provider</div>
+          <div class="status-value" id="selectedProvider">Loading...</div>
+          <div class="status-url" id="selectedUrl"></div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel providers">
+          <div class="panel-header">
+            <h2>Providers</h2>
+          </div>
+          <div class="provider-list" id="providerList"></div>
+        </div>
+
+        <div class="panel models">
+          <div class="panel-header">
+            <div class="models-head">
+              <h2>Models</h2>
+            </div>
+          </div>
+          <div class="models-list" id="modelList">
+            <div class="model-row" id="modelsToolbar">
+              <div class="model-pill model-filter-pill">
+                <input class="model-filter-input" id="modelFilterInput" placeholder="Filter models" />
+              </div>
+              <span class="refresh-status-inline" id="refreshStatusInline"></span>
+              <button class="copy-btn refresh-btn" id="refreshBtnInline">Refresh</button>
+            </div>
+            <div id="modelItems"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel auth-panel">
+        <div class="panel-header">
+          <h2>HTTP Overrides (Selected Provider)</h2>
+        </div>
+        <div class="override-section">
+          <h3>Token Configuration</h3>
+          <div class="auth-grid">
+            <label class="field">
+              <span>Token Placement</span>
+              <select id="tokenIn">
+                <option value="">Auto (Passthrough)</option>
+                <option value="query">Query</option>
+                <option value="header">Header</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Query Key</span>
+              <input id="tokenParam" placeholder="e.g., token, api_key, key" />
+            </label>
+            <label class="field">
+              <span>Header Key</span>
+              <input id="tokenHeader" placeholder="e.g., Authorization, x-api-key" />
+            </label>
+            <label class="field">
+              <span>Header Value</span>
+              <input id="tokenHeaderFormat" placeholder="e.g., Bearer {token}, {token}" />
+            </label>
+          </div>
+          <div class="auth-actions">
+            <button class="ghost" id="presetDefault">Default (Auto)</button>
+            <button class="ghost" id="presetQuery">?token={token}</button>
+            <button class="ghost" id="presetBearer">Authorization: Bearer {token}</button>
+            <button class="ghost" id="presetDirect">Authorization: {token}</button>
+            <button class="ghost" id="presetXApi">x-api-key: {token}</button>
+          </div>
+        </div>
+        <div class="override-section">
+          <h3>Override Presets</h3>
+          <div class="auth-grid">
+            <label class="field">
+              <span>Header Override</span>
+              <select id="headerOverride">
+              </select>
+            </label>
+            <label class="field">
+              <span>Request Override</span>
+              <select id="requestOverride">
+              </select>
+            </label>
+            <label class="field">
+              <span>Query Params</span>
+              <input id="queryParams" placeholder="e.g., beta=true" />
+            </label>
+          </div>
+        </div>
+        <div class="auth-actions">
+          <button class="ghost" id="presetClaudeCLI">Preset: Claude CLI</button>
+          <button class="ghost primary" id="applyAuth">Apply</button>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        Route the wire, keep the models visible. ·
+        <a href="/docs" target="_blank" style="color: inherit; text-decoration: underline;">📖 Documentation</a>
+      </footer>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

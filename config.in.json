@@ -1,0 +1,47 @@
+{
+  "HOST": "0.0.0.0",
+  "PORT": 3456,
+  "APIKEY": "sk-your-local-ui-key",
+  "_comment_HOST_PORT": "Proxy server address - also serves as Web UI access address (e.g., http://127.0.0.1:3456)",
+  "_comment_APIKEY": "Authentication key for Claude Code (ANTHROPIC_AUTH_TOKEN) - also used as Web UI password",
+  "_comment_token_in": "Optional: token_in field can be added to providers. Leave empty (or omit) for auto passthrough mode. Use 'header', 'query', or 'both' to override.",
+  "_comment": "后期如果cherry studio等客户端无法使用(某些站点进行检测限制时),则根据正常的日志,增加这里的覆写项即可",
+  "HeaderOverrides": {
+    "ClaudeCode": {
+      "User-Agent": "claude-cli/2.0.76 (external, cli)",
+      "x-app": "cli"
+    },
+    "None (Passthrough)": {},
+    "cherrystudio": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)",
+      "x-title": "Cherry Studio"
+    }
+  },
+  "RequestOverrides": {
+    "None (Passthrough)": {},
+    "ClaudeCode": {
+      "tools": []
+    }
+  },
+  "Providers": [
+    {
+      "name": "example-provider1",
+      "api_base_url": "https://api.example.com/v1/messages",
+      "api_key": "sk-provider-key-1",
+      "models": [
+        "claude-sonnet-4-5-20250929",
+        "claude-opus-4-5-20251101"
+      ],
+      "comment": "Optional note for this provider"
+    },
+    {
+      "name": "example-provider2",
+      "api_base_url": "https://api.example.com/v1/messages",
+      "api_key": "sk-provider-key-2",
+      "models": [
+        "claude-sonnet-4-5-20250929"
+      ],
+      "comment": "Optional note for this provider"
+    }
+  ]
+}

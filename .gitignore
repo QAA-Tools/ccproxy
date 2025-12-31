@@ -1,0 +1,22 @@
+# 生成的转换文件
+*.sql
+cc-router.json
+cliproxy.yaml
+
+# 配置和状态文件
+.claude
+ccr.in.json
+config.json
+proxy_state.json
+
+# 运行时文件
+ccproxy.pid
+ccproxy.log
+ccproxy.log.old
+ccproxy.err
+*.log
+*.log.old
+*.tmp
+
+# 环境变量
+.env
