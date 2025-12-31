@@ -2,7 +2,7 @@
 
 [简体中文](README_zh.md)
 
-A lightweight Claude API reverse proxy tool for managing multiple providers via Web UI without restarting Claude Code.
+A lightweight Claude API reverse proxy providing Anthropic endpoint access only. Switch providers via Web UI without restarting Claude Code. Works as a public gateway management tool: auto model refresh, quick copy URL/Token, generate ccr/ccswitch/cliproxyapi configs.
 
 ![demo](demo.png)
 

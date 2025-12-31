@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-轻量级 Claude API 反向代理工具，无需重启 Claude Code，通过 Web UI 切换管理多个供应商。
+轻量级 Claude API 反向代理工具，仅提供 Anthropic 端点访问，无需重启 Claude Code，通过 Web UI 切换供应商。可作为公益站点管理工具：自动刷新模型列表、快速复制 URL/Token、生成 ccr/ccswitch/cliproxyapi 配置文件。
 
 ![demo](demo.png)
 
