@@ -78,6 +78,7 @@ def provider_to_sql(provider, is_current=False, index=None, add_prefix=False, gl
     api_key = provider.get('api_key', '')
     comment = provider.get('comment', '')
     models = provider.get('models', [])
+    checkin = provider.get('checkin', '')  # 获取 checkin 属性
 
     # 如果需要添加序号前缀
     if add_prefix and index is not None:
@@ -101,6 +102,20 @@ def provider_to_sql(provider, is_current=False, index=None, add_prefix=False, gl
             website_url = f"{parts[0]}//{parts[2]}"
         else:
             website_url = base_url
+
+    # 提取签到 URL
+    # 1. 优先使用 provider 中的 checkin 字段
+    # 2. 如果不存在或为空，则从 api_base_url 提取 domain，默认为 https://domain/console/personal
+    if checkin and checkin.strip():
+        checkin_url = checkin
+    else:
+        # 从 base_url 提取 https://domain/
+        parts = base_url.split('/')
+        if len(parts) >= 3:
+            domain = f"{parts[0]}//{parts[2]}"
+            checkin_url = f"{domain}/console/personal"
+        else:
+            checkin_url = f"{base_url}/console/personal"
 
     # 构建 settings_config JSON（简化版，只保留必要信息）
     settings_config = {
@@ -126,6 +141,9 @@ def provider_to_sql(provider, is_current=False, index=None, add_prefix=False, gl
     meta = {}
     if models:
         meta['models'] = models
+    # 添加 checkin_url 到 meta 中
+    if checkin_url:
+        meta['checkin_url'] = checkin_url
 
     # 转义字符串（使用紧凑 JSON 格式，无空格）
     name_escaped = escape_sql_string(name)

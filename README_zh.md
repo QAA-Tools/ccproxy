@@ -11,6 +11,7 @@
 - **自动模型发现** - 从供应商 `/v1/models` 自动获取模型列表，无需手动查询和输入 `/model xxx`
 - **即时切换** - Web UI 切换供应商，无需重启 Claude Code
 - **快速复制** - 一键复制 URL、API key、`/model xxx` 命令
+- **一键签到** - 一键打开供应商签到页面（新窗口），支持批量签到多个站点
 - **热重载** - 修改 `config.json` 后通过 UI 重新加载
 - **HTTP 覆写** - 伪装客户端特征（User-Agent、请求体等），绕过站点检测限制
 
@@ -88,6 +89,7 @@ python ccproxy.py --config config.json
         "claude-opus-4-5-20251101"
       ],
       "comment": "备注",
+      "checkin": "https://example.com/console/personal",
       "env-models": {
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": "custom-haiku",
         "ANTHROPIC_DEFAULT_OPUS_MODEL": "custom-opus",
@@ -100,6 +102,10 @@ python ccproxy.py --config config.json
 ```
 
 **配置说明：**
+- `comment`（可选）- 供应商备注，显示在卡片下方
+- `checkin`（可选）- 签到页面 URL，点击签到按钮时打开
+  - 如果未设置，自动从 `api_base_url` 提取域名，默认为 `https://domain/console/personal`
+  - 例：`api_base_url` 为 `https://api.example.com/v1/messages` 时，自动生成 `https://api.example.com/console/personal`
 - `env-models`（可选）- 模型名称映射配置，用于 Claude Code 环境变量
   - **全局级别**（顶层 `env-models`）：作为所有供应商的默认模型名称映射
   - **供应商级别**（Provider 内的 `env-models`）：为特定供应商定制的模型名称映射

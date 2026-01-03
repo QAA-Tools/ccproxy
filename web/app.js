@@ -67,6 +67,26 @@ function extractBaseUrl(apiBaseUrl) {
   return apiBaseUrl.replace(/\/$/, "");
 }
 
+function extractDomain(apiBaseUrl) {
+  // 从 api_base_url 中提取 https://domain/ 部分
+  const baseUrl = extractBaseUrl(apiBaseUrl);
+  const parts = baseUrl.split('/');
+  if (parts.length >= 3) {
+    return `${parts[0]}//${parts[2]}`;
+  }
+  return baseUrl;
+}
+
+function getCheckinUrl(provider) {
+  // 如果 provider 有 checkin 属性且不为空，使用它
+  if (provider.checkin && provider.checkin.trim()) {
+    return provider.checkin;
+  }
+  // 否则，从 api_base_url 提取 domain，返回 https://domain/console/personal
+  const domain = extractDomain(provider.api_base_url || "");
+  return `${domain}/console/personal`;
+}
+
 async function copySettings(provider) {
   const baseUrl = extractBaseUrl(provider.api_base_url || "");
   const apiKey = provider.api_key || "";
@@ -163,6 +183,16 @@ function renderProviders(state) {
       copyText(provider.api_base_url || "");
     });
 
+    const checkinBtn = document.createElement("button");
+    checkinBtn.className = "mini-btn";
+    checkinBtn.textContent = "签到";
+    checkinBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const checkinUrl = getCheckinUrl(provider);
+      window.open(checkinUrl, "_blank");
+    });
+
+    actions.appendChild(checkinBtn);
     actions.appendChild(copySettingsBtn);
     actions.appendChild(copyTokenBtn);
     actions.appendChild(copyUrlBtn);
