@@ -29,6 +29,11 @@ const presetDirectBtn = document.getElementById("presetDirect");
 const presetXApiBtn = document.getElementById("presetXApi");
 const reloadBtn = document.getElementById("reloadBtn");
 const resetBtn = document.getElementById("resetBtn");
+const refreshAndTestBtn = document.getElementById("refreshAndTestBtn");
+const resetOverrideBtn = document.getElementById("resetOverride");
+const testModelEl = document.getElementById("testModel");
+const testPromptEl = document.getElementById("testPrompt");
+const testBtn = document.getElementById("testBtn");
 
 let refreshStatusText = "";
 let modelFilterValue = "";
@@ -142,7 +147,14 @@ function renderProviders(state) {
 
     const name = document.createElement("div");
     name.className = "provider-name";
-    name.textContent = provider.name || "Unnamed";
+    const fullName = provider.name || "Unnamed";
+    const displayName = fullName.length > 8 ? fullName.substring(0, 8) : fullName;
+    name.textContent = displayName;
+    if (provider.test_result === true) {
+      name.classList.add("test-success");
+    } else {
+      name.classList.add("test-default");
+    }
 
     const btn = document.createElement("button");
     btn.className = "select-btn";
@@ -431,6 +443,33 @@ async function refresh() {
 
 reloadBtn.addEventListener("click", reloadConfig);
 resetBtn.addEventListener("click", resetConfig);
+refreshAndTestBtn.addEventListener("click", async () => {
+  const prompt = testPromptEl.value || "hi";
+  refreshAndTestBtn.disabled = true;
+  refreshAndTestBtn.textContent = "Running...";
+  try {
+    const res = await fetch("/api/refresh-and-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    const result = await res.json();
+    console.log("Refresh & Test results:", result.results);
+    refreshAndTestBtn.textContent = "✓ Done";
+    setTimeout(() => {
+      refreshAndTestBtn.textContent = "Refresh & Test";
+    }, 2000);
+  } catch (err) {
+    console.error(err);
+    refreshAndTestBtn.textContent = "✗ Error";
+    setTimeout(() => {
+      refreshAndTestBtn.textContent = "Refresh & Test";
+    }, 2000);
+  } finally {
+    refreshAndTestBtn.disabled = false;
+  }
+  await refresh();
+});
 refreshBtnInlineEl.addEventListener("click", refreshModels);
 modelFilterInputEl.addEventListener("input", (event) => {
   modelFilterValue = event.target.value;
@@ -487,6 +526,40 @@ presetXApiBtn.addEventListener("click", () => {
   tokenInEl.value = "header";
   tokenHeaderEl.value = "x-api-key";
   tokenHeaderFormatEl.value = "{token}";
+});
+
+resetOverrideBtn.addEventListener("click", () => {
+  applyAuthOverride({});
+});
+
+testBtn.addEventListener("click", async () => {
+  const state = await fetchState();
+  const provider = state.selected_provider;
+  if (!provider) return;
+  const model = testModelEl.value || "claude-sonnet-4-5-20250929";
+  const prompt = testPromptEl.value || "hi";
+  testBtn.disabled = true;
+  testBtn.textContent = "Testing...";
+  try {
+    const res = await fetch("/api/test-provider", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, model, prompt }),
+    });
+    const result = await res.json();
+    testBtn.textContent = result.success ? "✓ Success" : "✗ Failed";
+    setTimeout(() => {
+      testBtn.textContent = "Test";
+    }, 2000);
+  } catch (err) {
+    testBtn.textContent = "✗ Error";
+    setTimeout(() => {
+      testBtn.textContent = "Test";
+    }, 2000);
+  } finally {
+    testBtn.disabled = false;
+  }
+  await refresh();
 });
 
 refresh().catch((err) => {

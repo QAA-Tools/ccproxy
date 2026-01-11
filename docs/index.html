@@ -207,8 +207,17 @@
         <!-- 简介 -->
         <section id="intro">
             <h2>简介</h2>
-            <p>轻量级 Claude API 反向代理工具，通过 Web 切换管理多个供应商，支持模型发现、快速复制、热重载配置。</p>
+            <p>轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换、HTTP 覆写、批量测试等功能。</p>
             <p><strong>适用场景：</strong>在多个公益站/转发站之间快速切换，无需重启 Claude Code。</p>
+
+            <h3>v2.0 新功能</h3>
+            <ul>
+                <li><strong>模块化架构</strong> - 代码重构，职责清晰，易于维护</li>
+                <li><strong>统一覆写配置</strong> - 所有 provider 共享配置，切换时不重置</li>
+                <li><strong>Provider 测试</strong> - 可配置模型和提示词，测试结果显示绿色/黑色</li>
+                <li><strong>Refresh & Test</strong> - 一键刷新并测试所有 provider，后台异步处理</li>
+                <li><strong>完整日志</strong> - 测试请求和响应完整记录到日志</li>
+            </ul>
         </section>
 
         <!-- 快速开始 -->
@@ -361,9 +370,21 @@
             <ul>
                 <li><strong>切换供应商：</strong>从下拉列表选择不同的 Provider，立即生效</li>
                 <li><strong>刷新模型列表：</strong>点击 <code>Refresh</code> 按钮，从上游 <code>/v1/models</code> 获取最新模型列表</li>
+                <li><strong>测试供应商：</strong>点击 <code>Test</code> 按钮测试当前供应商，结果显示为绿色（成功）或黑色（失败）</li>
+                <li><strong>批量测试：</strong>点击 <code>Refresh & Test</code> 按钮，一键刷新并测试所有供应商，保持账户活跃</li>
                 <li><strong>切换模型：</strong>选择模型后，点击 <code>Copy</code> 按钮复制 <code>/model xxx</code> 命令，粘贴到 Claude Code 即可切换</li>
                 <li><strong>重载配置：</strong>修改 config.json 后，点击 <code>Reload Config</code> 按钮重新加载配置，无需重启代理</li>
             </ul>
+
+            <div class="alert alert-info">
+                <strong>Refresh & Test 使用提示：</strong>
+                <ul>
+                    <li>点击后立即返回，后台异步处理，可关闭页面</li>
+                    <li>所有供应商都会收到测试请求，保持账户活跃</li>
+                    <li>测试结果会更新到 provider 名称颜色（绿色=成功，黑色=失败）</li>
+                    <li>完整的测试日志会记录到 <code>ccproxy.log</code></li>
+                </ul>
+            </div>
         </section>
 
         <!-- 高级功能 -->
@@ -371,7 +392,7 @@
             <h2>高级功能</h2>
 
             <h3>HTTP 覆写（HTTP Overrides）</h3>
-            <p>某些上游 API 需要特殊的请求头或请求体格式。在 Web UI 的 <code>HTTP Overrides (Selected Provider)</code> 面板中可以动态配置当前选中供应商的 HTTP 覆写规则：</p>
+            <p>某些上游 API 需要特殊的请求头或请求体格式。在 Web UI 的 <code>HTTP Overrides (Selected Provider)</code> 面板中可以配置统一的 HTTP 覆写规则（所有 provider 共享）：</p>
 
             <h4>Token Configuration（令牌配置）</h4>
             <table>
@@ -410,6 +431,10 @@
             </ul>
 
             <p>提供快捷按钮快速配置常见格式：<code>?token={token}</code>、<code>Authorization: Bearer {token}</code>、<code>Authorization: {token}</code>、<code>x-api-key: {token}</code>。修改后点击 <code>Apply</code> 按钮应用，配置会保存到 <code>proxy_state.json</code>。</p>
+
+            <div class="alert alert-warning">
+                <strong>注意：</strong>v2.0 改为统一覆写配置，所有 provider 共享。切换 provider 时配置不会重置。
+            </div>
 
             <h3>后台运行（Linux）</h3>
             <p>使用提供的 <code>run.sh</code> 脚本管理后台运行：</p>

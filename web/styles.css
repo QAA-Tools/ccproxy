@@ -219,6 +219,14 @@ h1 {
   font-weight: 700;
 }
 
+.provider-name.test-success {
+  color: #2d8659;
+}
+
+.provider-name.test-default {
+  color: var(--ink);
+}
+
 .provider-url {
   font-size: 0.82rem;
   color: #6f5c52;
@@ -371,6 +379,20 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.test-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.test-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(150, 120, 105, 0.25);
+  font-size: 0.9rem;
 }
 
 .page-footer {
