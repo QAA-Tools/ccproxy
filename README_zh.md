@@ -2,18 +2,17 @@
 
 [English](README.md)
 
-轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换、HTTP 覆写、批量测试等功能。
+轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换等功能。
 
 ![demo](demo.png)
 
-## 核心功能
+## 核心特性
 
-- **自动模型发现** - 从供应商 `/v1/models` 自动获取模型列表
 - **即时切换** - Web UI 切换供应商，无需重启 Claude Code
-- **快速复制** - 一键复制 URL、API key、`/model xxx` 命令
-- **批量测试** - 一键刷新并测试所有供应商，保持账户活跃
-- **HTTP 覆写** - 伪装客户端特征（User-Agent、请求体等），绕过站点检测
-- **热重载** - 修改 `config.json` 后通过 UI 重新加载
+- **自动发现** - 从供应商 `/v1/models` 自动获取模型列表
+- **HTTP 覆写** - 支持客户端特征伪装，绕过站点检测
+- **批量测试** - Refresh & Test 一键测试所有供应商，保持账户活跃
+- **热重载** - 修改配置后通过 UI 重新加载
 
 ## 快速开始
 
@@ -21,7 +20,7 @@
 # 1. 复制配置
 cp config.in.json config.json
 
-# 2. 编辑 config.json 添加供应商
+# 2. 编辑 config.json 添加供应商信息
 
 # 3. 启动代理
 python ccproxy.py --config config.json
@@ -30,8 +29,7 @@ python ccproxy.py --config config.json
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "<你的APIKEY>",
-    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456"
   }
 }
 
@@ -39,61 +37,11 @@ python ccproxy.py --config config.json
 # http://127.0.0.1:3456 (密码是你的 APIKEY)
 ```
 
-## 配置
+## 完整文档
 
-```json
-{
-  "HOST": "0.0.0.0",
-  "PORT": 3456,
-  "APIKEY": "sk-your-key",
-  "ERROR_THRESHOLD": 3,
-  "HeaderOverrides": {
-    "ClaudeCode": {
-      "User-Agent": "claude-cli/2.0.76 (external, cli)",
-      "x-app": "cli"
-    }
-  },
-  "RequestOverrides": {
-    "ClaudeCode": {
-      "tools": []
-    }
-  },
-  "Providers": [
-    {
-      "name": "供应商名称",
-      "api_base_url": "https://api.example.com/v1/messages",
-      "api_key": "sk-provider-key",
-      "models": ["claude-sonnet-4-5-20250929"],
-      "comment": "备注"
-    }
-  ]
-}
-```
+详细的配置说明、按钮功能、HTTP 覆写、FAQ 等请访问：
 
-**配置说明：**
-- `ERROR_THRESHOLD` - 错误重试阈值，达到阈值后断开连接触发客户端重试
-- `HeaderOverrides` - 请求头覆写预设，通过 Web UI 选择应用
-- `RequestOverrides` - 请求体覆写预设，通过 Web UI 选择应用
-- `comment`（可选）- 供应商备注，显示在卡片下方
-
-**HTTP 覆写：**
-- 统一的覆写配置，所有供应商共享
-- 通过 Web UI 配置��token_in、header_override、request_override 等
-- 支持透传模式和 Override 模式
-
-## 新功能
-
-**v2.0 更新：**
-- ✅ 模块化架构 - 代码重构，职责清晰，易于维护
-- ✅ 统一覆写配置 - 所有 provider 共享配置，切换时不重置
-- ✅ Provider 测试 - 可配置模型和提示词，测试结果显示绿色/黑色
-- ✅ Refresh & Test - 一键刷新并测试所有 provider，后台异步处理
-- ✅ 完整日志 - 测试请求和响应完整记录到日志
-
-**使用场景：**
-- 定期点击 "Refresh & Test" 保持所有账户活跃
-- 测试结果持久化，重启后保留（存储在内存中）
-- 可关闭页面，后台继续���理
+**📖 [完整文档](https://qaa-tools.github.io/ccproxy/)** 或本地访问 `http://127.0.0.1:3456/docs`
 
 ## 后台运行（Linux）
 

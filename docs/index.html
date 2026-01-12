@@ -207,17 +207,9 @@
         <!-- 简介 -->
         <section id="intro">
             <h2>简介</h2>
-            <p>轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换、HTTP 覆写、批量测试等功能。</p>
+            <p>轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换等功能。</p>
             <p><strong>适用场景：</strong>在多个公益站/转发站之间快速切换，无需重启 Claude Code。</p>
-
-            <h3>v2.0 新功能</h3>
-            <ul>
-                <li><strong>模块化架构</strong> - 代码重构，职责清晰，易于维护</li>
-                <li><strong>统一覆写配置</strong> - 所有 provider 共享配置，切换时不重置</li>
-                <li><strong>Provider 测试</strong> - 可配置模型和提示词，测试结果显示绿色/黑色</li>
-                <li><strong>Refresh & Test</strong> - 一键刷新并测试所有 provider，后台异步处理</li>
-                <li><strong>完整日志</strong> - 测试请求和响应完整记录到日志</li>
-            </ul>
+            <p><strong>核心特性：</strong>支持 HTTP 覆写配置（Header/Request/Query 参数）绕过站点检测；提供 Refresh & Test 功能一键测试所有 provider 并保持账户活跃。</p>
         </section>
 
         <!-- 快速开始 -->
@@ -366,24 +358,75 @@
 
             <p>浏览器访问 <code>http://127.0.0.1:3456</code>，使用 <code>APIKEY</code> 作为密码登录（用户名任意）。</p>
 
-            <h3>主要功能</h3>
-            <ul>
-                <li><strong>切换供应商：</strong>从下拉列表选择不同的 Provider，立即生效</li>
-                <li><strong>刷新模型列表：</strong>点击 <code>Refresh</code> 按钮，从上游 <code>/v1/models</code> 获取最新模型列表</li>
-                <li><strong>测试供应商：</strong>点击 <code>Test</code> 按钮测试当前供应商，结果显示为绿色（成功）或黑色（失败）</li>
-                <li><strong>批量测试：</strong>点击 <code>Refresh & Test</code> 按钮，一键刷新并测试所有供应商，保持账户活跃</li>
-                <li><strong>切换模型：</strong>选择模型后，点击 <code>Copy</code> 按钮复制 <code>/model xxx</code> 命令，粘贴到 Claude Code 即可切换</li>
-                <li><strong>重载配置：</strong>修改 config.json 后，点击 <code>Reload Config</code> 按钮重新加载配置，无需重启代理</li>
-            </ul>
+            <h3>按钮功能说明</h3>
+            <table>
+                <tr>
+                    <th>按钮</th>
+                    <th>功能说明</th>
+                </tr>
+                <tr>
+                    <td><code>Reload Config</code></td>
+                    <td>重新加载 <code>config.json</code> 配置文件，无需重启代理</td>
+                </tr>
+                <tr>
+                    <td><code>Reset Config</code></td>
+                    <td>重置所有 HTTP 覆写配置为默认值</td>
+                </tr>
+                <tr>
+                    <td><code>Refresh & Test</code></td>
+                    <td>一键刷新并测试所有 provider（后台异步执行，保持账户活跃）</td>
+                </tr>
+                <tr>
+                    <td><code>Refresh</code></td>
+                    <td>刷新当前 provider 的模型列表（从上游 <code>/v1/models</code> 获取）</td>
+                </tr>
+                <tr>
+                    <td><code>Copy</code></td>
+                    <td>复制 <code>/model xxx</code> 命令到剪贴板，粘贴到 Claude Code 切换模型</td>
+                </tr>
+                <tr>
+                    <td><code>签到</code></td>
+                    <td>打开对应站点的签到页面领取额度（默认 <code>{domain}/console/personal</code>，可在 provider 中配置 <code>checkin</code> 字段自定义）</td>
+                </tr>
+                <tr>
+                    <td><code>settings.json</code></td>
+                    <td>复制当前 provider 的 Claude Code 配置到剪贴板（可直接粘贴到 <code>~/.claude/config.json</code>）</td>
+                </tr>
+                <tr>
+                    <td><code>Token</code></td>
+                    <td>复制当前 provider 的 API Key 到剪贴板</td>
+                </tr>
+                <tr>
+                    <td><code>URL</code></td>
+                    <td>复制当前 provider 的 API Base URL 到剪贴板</td>
+                </tr>
+                <tr>
+                    <td><code>Test</code></td>
+                    <td>测试当前 provider（使用 Provider Test 面板中配置的模型和提示词）</td>
+                </tr>
+                <tr>
+                    <td><code>Apply</code></td>
+                    <td>应用当前配置的 HTTP 覆写规则（所有 provider 共享）</td>
+                </tr>
+                <tr>
+                    <td><code>Reset Override</code></td>
+                    <td>重置 HTTP 覆写配置为默认 Auto 模式</td>
+                </tr>
+                <tr>
+                    <td><code>Preset: Claude CLI</code></td>
+                    <td>应用 ClaudeCode 预设组合（Header + Request 覆写）</td>
+                </tr>
+            </table>
 
             <div class="alert alert-info">
-                <strong>Refresh & Test 使用提示：</strong>
-                <ul>
-                    <li>点击后立即返回，后台异步处理，可关闭页面</li>
-                    <li>所有供应商都会收到测试请求，保持账户活跃</li>
-                    <li>测试结果会更新到 provider 名称颜色（绿色=成功，黑色=失败）</li>
-                    <li>完整的测试日志会记录到 <code>ccproxy.log</code></li>
-                </ul>
+                <strong>保活操作建议：</strong>
+                <ol>
+                    <li>点击 <code>Preset: Claude CLI</code> 按钮，自动配置 ClaudeCode 预设（Header + Request 覆写）</li>
+                    <li>点击 <code>Apply</code> 按钮应用配置</li>
+                    <li>在 Provider Test 面板中填写测试提示词（建议简短，节省额度）</li>
+                    <li>点击 <code>Refresh &amp; Test</code> 按钮批量测试所有 provider，保持账户活跃</li>
+                </ol>
+                <strong>其他说明：</strong>签到 URL 可通过在 <code>config.json</code> 的 provider 中添加 <code>"checkin": "https://your-url"</code> 字段自定义。测试结果以颜色标识（绿色=成功，黑色=失败），完整日志记录到 <code>ccproxy.log</code>。
             </div>
         </section>
 
@@ -392,48 +435,16 @@
             <h2>高级功能</h2>
 
             <h3>HTTP 覆写（HTTP Overrides）</h3>
-            <p>某些上游 API 需要特殊的请求头或请求体格式。在 Web UI 的 <code>HTTP Overrides (Selected Provider)</code> 面板中可以配置统一的 HTTP 覆写规则（所有 provider 共享）：</p>
-
-            <h4>Token Configuration（令牌配置）</h4>
-            <table>
-                <tr>
-                    <th>配置项</th>
-                    <th>说明</th>
-                    <th>默认值</th>
-                </tr>
-                <tr>
-                    <td><code>Token Placement</code></td>
-                    <td>Token 传递方式：<code>Auto (Passthrough)</code> / <code>Query</code> / <code>Header</code> / <code>Both</code></td>
-                    <td><code>Auto</code></td>
-                </tr>
-                <tr>
-                    <td><code>Query Key</code></td>
-                    <td>Query 参数名（如 <code>?token=xxx</code> 中的 "token"）</td>
-                    <td><code>token</code></td>
-                </tr>
-                <tr>
-                    <td><code>Header Key</code></td>
-                    <td>HTTP Header 名称</td>
-                    <td><code>Authorization</code></td>
-                </tr>
-                <tr>
-                    <td><code>Header Value</code></td>
-                    <td>Header 值格式（<code>{token}</code> 会被替换为实际密钥）</td>
-                    <td><code>Bearer {token}</code></td>
-                </tr>
-            </table>
-
-            <h4>Override Presets（覆写预设）</h4>
+            <p>在 Web UI 可配置统一的 HTTP 覆写规则（所有 provider 共享），包括：</p>
             <ul>
-                <li><strong>Header Override：</strong>选择预定义的请求头覆写（如伪装成 Claude CLI）</li>
-                <li><strong>Request Override：</strong>选择预定义的请求体覆写（如移除 tools 字段）</li>
-                <li><strong>Query Params：</strong>添加额外的 URL 查询参数（如 <code>beta=true</code>）</li>
+                <li><strong>Token Configuration：</strong>配置 Token 传递方式（Query/Header）和格式</li>
+                <li><strong>Header Override：</strong>选择预设的请求头覆写（如 ClaudeCode 模拟真实客户端）</li>
+                <li><strong>Request Override：</strong>选择预设的请求体覆写（注入 system, tools, metadata 等字段）</li>
+                <li><strong>Query Params：</strong>添加 URL 查询参数</li>
             </ul>
 
-            <p>提供快捷按钮快速配置常见格式：<code>?token={token}</code>、<code>Authorization: Bearer {token}</code>、<code>Authorization: {token}</code>、<code>x-api-key: {token}</code>。修改后点击 <code>Apply</code> 按钮应用，配置会保存到 <code>proxy_state.json</code>。</p>
-
-            <div class="alert alert-warning">
-                <strong>注意：</strong>v2.0 改为统一覆写配置，所有 provider 共享。切换 provider 时配置不会重置。
+            <div class="alert alert-info">
+                <strong>提示：</strong>某些 provider 需要完整的客户端特征才能通过验证，建议使用 <code>ClaudeCode</code> 预设组合。详细配置参考 <code>config.in.json</code>。
             </div>
 
             <h3>后台运行（Linux）</h3>
@@ -452,49 +463,17 @@
         <section id="faq">
             <h2>常见问题</h2>
 
-            <h3>Q: Claude Code 连接失败？</h3>
-            <p><strong>A:</strong> 请检查：</p>
-            <ul>
-                <li>ccproxy 是否正在运行</li>
-                <li><code>ANTHROPIC_AUTH_TOKEN</code> 是否与 <code>APIKEY</code> 一致</li>
-                <li><code>ANTHROPIC_BASE_URL</code> 地址是否正确（注意 HOST 和 PORT）</li>
-                <li>防火墙是否阻止了端口访问</li>
-            </ul>
+            <h3>Q: Claude Code 连接失败或 Web UI 无法登录？</h3>
+            <p><strong>A:</strong> 检查 ccproxy 是否运行；<code>ANTHROPIC_AUTH_TOKEN</code> 和 Web UI 密码是否与 <code>APIKEY</code> 一致；<code>ANTHROPIC_BASE_URL</code> 地址和端口是否正确。</p>
 
-            <h3>Q: Web UI 无法登录？</h3>
-            <p><strong>A:</strong> 请确认：</p>
-            <ul>
-                <li>密码是否为 <code>config.json</code> 中的 <code>APIKEY</code></li>
-                <li>用户名不能为空（可以是任意值）</li>
-                <li>浏览器是否保存了错误的密码（尝试清除缓存）</li>
-            </ul>
-
-            <h3>Q: 刷新模型列表失败？</h3>
-            <p><strong>A:</strong> 可能原因：</p>
-            <ul>
-                <li>上游 API 地址不正确</li>
-                <li>上游 API 密钥无效或过期</li>
-                <li>上游服务器不支持 <code>/v1/models</code> 端点</li>
-                <li>网络连接问题</li>
-            </ul>
-
-            <h3>Q: 切换 Provider 后 Claude Code 没反应？</h3>
-            <p><strong>A:</strong> 这是正常的。切换 Provider 只影响后续的新请求。当前正在进行的对话会继续使用之前的 Provider。建议开启新对话测试。</p>
+            <h3>Q: 切换 Provider 后没反应？</h3>
+            <p><strong>A:</strong> 切换只影响新请求，当前对话继续使用之前的 Provider。建议开启新对话测试。</p>
 
             <h3>Q: 支持哪些上游 API？</h3>
-            <p><strong>A:</strong> 支持所有兼容 Claude API 格式的端点，包括：</p>
-            <ul>
-                <li>Anthropic 官方 API</li>
-                <li>各类公益站/转发站</li>
-                <li>GLM 等兼容 Claude 格式的 API</li>
-            </ul>
-            <p><strong>注意：</strong>本项目不提供模型转换功能（如 OpenAI → Claude），仅支持原生 Claude 格式。</p>
-
-            <h3>Q: 如何添加新的供应商？</h3>
-            <p><strong>A:</strong> 编辑 <code>config.json</code>，在 <code>Providers</code> 数组中添加新条目，然后在 Web UI 点击 <code>Reload Config</code> 按钮即可。</p>
+            <p><strong>A:</strong> 支持所有兼容 Claude API 格式的端点（Anthropic 官方、公益站、转发站等）。<strong>不支持模型转换</strong>（如 OpenAI → Claude）。</p>
 
             <h3>Q: 配置文件格式兼容性？</h3>
-            <p><strong>A:</strong> <code>config.json</code> 格式兼容 <a href="https://github.com/musistudio/claude-code-router">ccr</a> 和 ccproxy，可通用。本项目不包含模型转换功能。</p>
+            <p><strong>A:</strong> <code>config.json</code> 格式兼容 <a href="https://github.com/musistudio/claude-code-router">ccr</a> 和 ccproxy。添加新供应商后在 Web UI 点击 <code>Reload Config</code> 即可生效。</p>
         </section>
     </div>
 
