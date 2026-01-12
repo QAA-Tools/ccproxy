@@ -11,7 +11,7 @@ A lightweight Claude API reverse proxy providing Web UI to manage multiple provi
 - **Instant Switching** - Switch providers via Web UI without restarting Claude Code
 - **Auto Discovery** - Automatically fetch model lists from provider's `/v1/models`
 - **HTTP Overrides** - Spoof client characteristics to bypass site detection
-- **Batch Testing** - Refresh & Test all providers in one click, keep accounts active
+- **Batch Testing** - Refresh & Test all providers in one click
 - **Hot Reload** - Reload config changes via UI
 
 ## Quick Start
