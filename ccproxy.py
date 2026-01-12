@@ -984,8 +984,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         client_query = ""
 
         # 最小化的请求体，只包含核心业务字段
-        # 在 Override 模式下：system, tools, metadata, max_tokens, stream, thinking 将通过 RequestOverrides 注入
-        # 在 Passthrough 模式下：添加基本的必需字段以确保兼容性
+        # 在 Override 模式下：max_tokens, stream, system, tools, metadata, thinking 将通过 RequestOverrides 注入
         request_data = {
             "model": model,
             "messages": [{
@@ -995,9 +994,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     "text": prompt,
                     "cache_control": {"type": "ephemeral"}
                 }]
-            }],
-            "max_tokens": 100,
-            "stream": True
+            }]
         }
 
         client_body = json.dumps(request_data, separators=(',', ':')).encode("utf-8")

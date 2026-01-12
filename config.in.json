@@ -11,7 +11,7 @@
   "HeaderOverrides": {
     "ClaudeCode": {
       "Accept": "application/json",
-      "User-Agent": "claude-cli/2.0.76 (external, cli)",
+      "User-Agent": "claude-cli/2.1.5 (external, cli)",
       "X-Forwarded-For": "211.222.233.244",
       "X-Forwarded-Proto": "https",
       "X-Real-IP": "211.222.233.244",
@@ -24,10 +24,11 @@
       "X-Stainless-Runtime-Version": "v24.11.0",
       "X-Stainless-Timeout": "600",
       "accept-language": "*",
-      "anthropic-beta": "interleaved-thinking-2025-05-14",
+      "anthropic-beta": "claude-code-20250219,interleaved-thinking-2025-05-14",
       "anthropic-dangerous-direct-browser-access": "true",
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
+      "sec-fetch-mode": "cors",
       "x-app": "cli",
       "x-stainless-helper-method": "stream"
     },

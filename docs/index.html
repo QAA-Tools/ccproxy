@@ -447,6 +447,60 @@
                 <strong>提示：</strong>某些 provider 需要完整的客户端特征才能通过验证，建议使用 <code>ClaudeCode</code> 预设组合。详细配置参考 <code>config.in.json</code>。
             </div>
 
+            <h3>如何生成自定义覆写配置</h3>
+            <p>如果现有预设无法通过某些 provider 的检测，可以从实际请求日志中生成自定义覆写配置。</p>
+
+            <div class="steps">
+                <div class="step">
+                    <strong>正常访问获取基准请求</strong>
+                    <ul>
+                        <li>在 Web UI 中将 Header Override 和 Request Override 设置为 <code>None (Passthrough)</code></li>
+                        <li>点击 <code>Apply</code> 应用配置</li>
+                        <li>使用 Claude Code 正常访问一次目标 provider（发送任意请求）</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <strong>查看请求日志</strong>
+                    <p>打开 <code>ccproxy.log</code> 文件，找到刚才的请求记录，定位到：</p>
+                    <ul>
+                        <li><code>forward: upstream_headers</code> - 实际发送的请求头</li>
+                        <li><code>forward: request_body</code> - 实际发送的请求体</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <strong>使用 Claude Code 自动更新配置</strong>
+                    <p>复制以下提示词到 Claude Code，让 AI 自动分析日志并更新 <code>config.json</code> 和 <code>ccproxy.py</code>：</p>
+                    <pre><code>查看最新的 ccproxy.log 日志，对比当前 config.json 中 HeaderOverrides.ClaudeCode 和 RequestOverrides.ClaudeCode 的配置，以及 ccproxy.py 中测试请求的 model, messages 格式，找出日志中实际发送的请求与配置文件的差异，然后同时更新 config.json 和 ccproxy.py 使其与实际请求一致。
+
+具体步骤：
+1. 检查日志中最近的 "forward: upstream_headers" 部分，提取所有请求头字段
+2. 检查日志中最近的 "forward: request_body" 部分，提取请求体中的特殊字段（如 system, tools, metadata, max_tokens, stream, thinking 等）
+3. 对比 config.json 中现有的 HeaderOverrides.ClaudeCode 和 RequestOverrides.ClaudeCode 配置
+4. 对比 ccproxy.py 中 _test_provider 方法的 request_data 格式（应仅包含 model, messages）
+5. 更新 config.json 中缺失或不一致的字段（RequestOverrides.ClaudeCode 应包含 max_tokens, stream 等完整字段）
+6. 更新 ccproxy.py 中的测试请求格式（仅保留 model, messages，其他字段移到 RequestOverrides）
+7. 告诉我更新了哪些内容</code></pre>
+                </div>
+
+                <div class="step">
+                    <strong>在 Web UI 中应用新配置</strong>
+                    <ul>
+                        <li>在 ccproxy 中点击 <code>Reload Config</code> 重新加载配置</li>
+                        <li>选择 <code>ClaudeCode</code> 预设</li>
+                        <li>点击 <code>Apply</code> 应用</li>
+                        <li>测试是否能正常访问 provider</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>RequestOverrides 配置说明：</strong>
+                <p><code>RequestOverrides.ClaudeCode</code> 应包含标准 Claude Code 请求的完整结构（如 system, tools, metadata, max_tokens, stream, thinking 等字段），用于注入到实际请求中。</p>
+                <p><strong>注意：</strong>测试请求（Test/Refresh & Test 按钮）使用最小化的请求体（仅包含 model, messages），其他字段会自动从 RequestOverrides.ClaudeCode 中合并。因此，RequestOverrides 配置中应包含完整的标准请求结构（包括 max_tokens, stream 等字段）。</p>
+            </div>
+
             <h3>后台运行（Linux）</h3>
             <p>使用提供的 <code>run.sh</code> 脚本管理后台运行：</p>
             <pre><code>./run.sh start    # 启动
