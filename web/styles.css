@@ -383,12 +383,14 @@ h1 {
 
 .test-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
 .test-row input {
   flex: 1;
+  min-width: 200px;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid rgba(150, 120, 105, 0.25);

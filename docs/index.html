@@ -199,7 +199,6 @@
             <li><a href="#claude-setup">Claude Code 配置</a></li>
             <li><a href="#web-ui">Web UI 使用</a></li>
             <li><a href="#advanced">高级功能</a></li>
-            <li><a href="#faq">常见问题</a></li>
         </ul>
     </nav>
 
@@ -369,10 +368,6 @@
                     <td>重新加载 <code>config.json</code> 配置文件，无需重启代理</td>
                 </tr>
                 <tr>
-                    <td><code>Reset Config</code></td>
-                    <td>重置所有 HTTP 覆写配置为默认值</td>
-                </tr>
-                <tr>
                     <td><code>Refresh & Test</code></td>
                     <td>一键刷新并测试所有 provider（后台异步执行<del>，保持账户活跃</del>）</td>
                 </tr>
@@ -444,7 +439,7 @@
             </ul>
 
             <div class="alert alert-info">
-                <strong>提示：</strong>某些 provider 需要完整的客户端特征才能通过验证，建议使用 <code>ClaudeCode</code> 预设组合。详细配置参考 <code>config.in.json</code>。
+                <strong>可扩展设计：</strong>你可以在 <code>config.json</code> 中定义多个自定义预设，Web UI 会自动识别并在下拉列表中显示。某些 provider 需要完整的客户端特征才能通过验证，建议先使用内置的 <code>ClaudeCode</code> 预设组合，如需自定义请参考下方说明。
             </div>
 
             <h3>如何生成自定义覆写配置</h3>
@@ -496,9 +491,28 @@
             </div>
 
             <div class="alert alert-info">
-                <strong>RequestOverrides 配置说明：</strong>
-                <p><code>RequestOverrides.ClaudeCode</code> 应包含标准 Claude Code 请求的完整结构（如 system, tools, metadata, max_tokens, stream, thinking 等字段），用于注入到实际请求中。</p>
-                <p><strong>注意：</strong>测试请求（Test/Refresh & Test 按钮）使用最小化的请求体（仅包含 model, messages），其他字段会自动从 RequestOverrides.ClaudeCode 中合并。因此，RequestOverrides 配置中应包含完整的标准请求结构（包括 max_tokens, stream 等字段）。</p>
+                <strong>自定义覆写预设：</strong>
+                <p>除了内置的 <code>ClaudeCode</code> 预设，你可以在 <code>config.json</code> 中定义更多自定义预设，Web UI 会自动识别并显示在下拉列表中：</p>
+                <pre><code>"HeaderOverrides": {
+  "ClaudeCode": { ... },
+  "MyCustomHeaders": {
+    "User-Agent": "MyClient/1.0",
+    "X-Custom-Header": "value"
+  }
+},
+"RequestOverrides": {
+  "ClaudeCode": { ... },
+  "MyCustomRequest": {
+    "max_tokens": 16000,
+    "stream": false
+  }
+}</code></pre>
+                <p><strong>RequestOverrides 结构说明：</strong></p>
+                <ul>
+                    <li><code>RequestOverrides.ClaudeCode</code> 应包含标准 Claude Code 请求的完整结构（如 system, tools, metadata, max_tokens, stream, thinking 等字段），用于注入到实际请求中</li>
+                    <li>测试请求（Test/Refresh & Test 按钮）使用最小化的请求体（仅包含 model, messages），其他字段会自动从所选的 RequestOverrides 预设中合并</li>
+                    <li>你可以为不同场景创建不同的预设（如调试用的小 max_tokens，生产用的大 max_tokens 等）</li>
+                </ul>
             </div>
 
             <h3>后台运行（Linux）</h3>
@@ -513,22 +527,6 @@
             <p>代理会将当前选择的 Provider 和认证覆盖规则保存到 <code>proxy_state.json</code>。删除此文件会重置为第一个 Provider。</p>
         </section>
 
-        <!-- 常见问题 -->
-        <section id="faq">
-            <h2>常见问题</h2>
-
-            <h3>Q: Claude Code 连接失败或 Web UI 无法登录？</h3>
-            <p><strong>A:</strong> 检查 ccproxy 是否运行；<code>ANTHROPIC_AUTH_TOKEN</code> 和 Web UI 密码是否与 <code>APIKEY</code> 一致；<code>ANTHROPIC_BASE_URL</code> 地址和端口是否正确。</p>
-
-            <h3>Q: 切换 Provider 后没反应？</h3>
-            <p><strong>A:</strong> 切换只影响新请求，当前对话继续使用之前的 Provider。建议开启新对话测试。</p>
-
-            <h3>Q: 支持哪些上游 API？</h3>
-            <p><strong>A:</strong> 支持所有兼容 Claude API 格式的端点（Anthropic 官方、公益站、转发站等）。<strong>不支持模型转换</strong>（如 OpenAI → Claude）。</p>
-
-            <h3>Q: 配置文件格式兼容性？</h3>
-            <p><strong>A:</strong> <code>config.json</code> 格式兼容 <a href="https://github.com/musistudio/claude-code-router">ccr</a> 和 ccproxy。添加新供应商后在 Web UI 点击 <code>Reload Config</code> 即可生效。</p>
-        </section>
     </div>
 
     <footer>

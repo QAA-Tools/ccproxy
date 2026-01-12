@@ -28,7 +28,6 @@ const presetBearerBtn = document.getElementById("presetBearer");
 const presetDirectBtn = document.getElementById("presetDirect");
 const presetXApiBtn = document.getElementById("presetXApi");
 const reloadBtn = document.getElementById("reloadBtn");
-const resetBtn = document.getElementById("resetBtn");
 const refreshAndTestBtn = document.getElementById("refreshAndTestBtn");
 const resetOverrideBtn = document.getElementById("resetOverride");
 const testModelEl = document.getElementById("testModel");
@@ -404,28 +403,6 @@ async function reloadConfig() {
   await refresh();
 }
 
-async function resetConfig() {
-  refreshBtnInlineEl.disabled = true;
-  reloadBtn.disabled = true;
-  resetBtn.disabled = true;
-  refreshStatusText = "Resetting...";
-  refreshStatusInlineEl.textContent = refreshStatusText;
-  try {
-    await fetch("/api/reset", { method: "POST" });
-    refreshStatusText = "Reset";
-    refreshStatusInlineEl.textContent = refreshStatusText;
-  } catch (err) {
-    refreshStatusText = "Reset Failed";
-    refreshStatusInlineEl.textContent = refreshStatusText;
-  } finally {
-    refreshBtnInlineEl.disabled = false;
-    reloadBtn.disabled = false;
-    resetBtn.disabled = false;
-  }
-  previewProviderName = null;
-  await refresh();
-}
-
 async function refresh() {
   const state = await fetchState();
   globalEnvModels = state.global_env_models || {};
@@ -441,9 +418,14 @@ async function refresh() {
 }
 
 reloadBtn.addEventListener("click", reloadConfig);
-resetBtn.addEventListener("click", resetConfig);
 refreshAndTestBtn.addEventListener("click", async () => {
-  const prompt = testPromptEl.value || "hi";
+  const prompt = testPromptEl.value || "当前项目如何构建为Docker版本";
+
+  // 如果输入框为空，填充实际使用的默认值
+  if (!testPromptEl.value) {
+    testPromptEl.value = prompt;
+  }
+
   refreshAndTestBtn.disabled = true;
   refreshAndTestBtn.textContent = "Running...";
   try {
@@ -502,29 +484,42 @@ presetClaudeCLIBtn.addEventListener("click", () => {
 
 presetDefaultBtn.addEventListener("click", () => {
   tokenInEl.value = "";
+  // 清空所有字段
+  tokenParamEl.value = "";
+  tokenHeaderEl.value = "";
+  tokenHeaderFormatEl.value = "";
 });
 
 presetQueryBtn.addEventListener("click", () => {
   tokenInEl.value = "query";
   tokenParamEl.value = "token";
+  // 清空 header 相关字段
+  tokenHeaderEl.value = "";
+  tokenHeaderFormatEl.value = "";
 });
 
 presetBearerBtn.addEventListener("click", () => {
   tokenInEl.value = "header";
   tokenHeaderEl.value = "Authorization";
   tokenHeaderFormatEl.value = "Bearer {token}";
+  // 清空 query 相关字段
+  tokenParamEl.value = "";
 });
 
 presetDirectBtn.addEventListener("click", () => {
   tokenInEl.value = "header";
   tokenHeaderEl.value = "Authorization";
   tokenHeaderFormatEl.value = "{token}";
+  // 清空 query 相关字段
+  tokenParamEl.value = "";
 });
 
 presetXApiBtn.addEventListener("click", () => {
   tokenInEl.value = "header";
   tokenHeaderEl.value = "x-api-key";
   tokenHeaderFormatEl.value = "{token}";
+  // 清空 query 相关字段
+  tokenParamEl.value = "";
 });
 
 resetOverrideBtn.addEventListener("click", () => {
@@ -535,8 +530,17 @@ testBtn.addEventListener("click", async () => {
   const state = await fetchState();
   const provider = state.selected_provider;
   if (!provider) return;
-  const model = testModelEl.value || "claude-sonnet-4-5-20250929";
-  const prompt = testPromptEl.value || "hi";
+  const model = testModelEl.value || "claude-haiku-4-5-20251001";
+  const prompt = testPromptEl.value || "当前项目如何构建为Docker版本";
+
+  // 如果输入框为空，填充实际使用的默认值
+  if (!testModelEl.value) {
+    testModelEl.value = model;
+  }
+  if (!testPromptEl.value) {
+    testPromptEl.value = prompt;
+  }
+
   testBtn.disabled = true;
   testBtn.textContent = "Testing...";
   try {

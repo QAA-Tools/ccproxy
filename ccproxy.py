@@ -984,15 +984,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
         client_query = ""
 
         # 最小化的请求体，只包含核心业务字段
-        # 在 Override 模式下：max_tokens, stream, system, tools, metadata, thinking 将通过 RequestOverrides 注入
+        # 在 Override 模式: system, tools, metadata 等将通过 RequestOverrides 注入
         request_data = {
             "model": model,
             "messages": [{
                 "role": "user",
                 "content": [{
                     "type": "text",
-                    "text": prompt,
-                    "cache_control": {"type": "ephemeral"}
+                    "text": prompt
                 }]
             }]
         }
