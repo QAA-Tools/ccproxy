@@ -977,12 +977,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
         total_bytes = 0
         all_chunks = []
         try:
-            for chunk in resp.iter_content(chunk_size=8192):
-                if chunk:
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
-                    total_bytes += len(chunk)
-                    all_chunks.append(chunk)
+            # 使用 resp.raw 读取原始内容（不自动解压），保持透明传输
+            # resp.raw.stream() 返回原始字节流，不会自动解压 gzip
+            while True:
+                chunk = resp.raw.read(8192)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                self.wfile.flush()
+                total_bytes += len(chunk)
+                all_chunks.append(chunk)
         except BrokenPipeError:
             logging.warning("proxy: client disconnected (BrokenPipeError)")
         except Exception as e:
@@ -990,8 +994,19 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         elapsed = time.time() - start_time
 
-        # 显示响应内容（复用统一的日志记录逻辑）
-        self._log_response_content(b"".join(all_chunks), "proxy")
+        # 显示响应内容（尝试解压以便日志显示）
+        raw_content = b"".join(all_chunks)
+        # 检查是否是 gzip 压缩
+        content_encoding = resp.headers.get("Content-Encoding", "").lower()
+        if content_encoding == "gzip":
+            try:
+                import gzip
+                decompressed = gzip.decompress(raw_content)
+                self._log_response_content(decompressed, "proxy")
+            except Exception:
+                logging.info("proxy: response_body (gzip compressed, %d bytes)", len(raw_content))
+        else:
+            self._log_response_content(raw_content, "proxy")
 
         logging.info("proxy: provider=%s completed bytes=%s elapsed=%.1fs", provider_name, total_bytes, elapsed)
 
