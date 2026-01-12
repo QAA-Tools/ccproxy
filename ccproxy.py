@@ -57,9 +57,11 @@ def merge_query(url: str, extra_query: str) -> str:
     if not extra_query:
         return url
     parts = urllib.parse.urlsplit(url)
-    query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
-    query.extend(urllib.parse.parse_qsl(extra_query, keep_blank_values=True))
-    new_query = urllib.parse.urlencode(query)
+    # 使用字典来避免重复的参数（后面的值会覆盖前面的）
+    query_dict = dict(urllib.parse.parse_qsl(parts.query, keep_blank_values=True))
+    extra_dict = dict(urllib.parse.parse_qsl(extra_query, keep_blank_values=True))
+    query_dict.update(extra_dict)
+    new_query = urllib.parse.urlencode(query_dict)
     return urllib.parse.urlunsplit(
         (parts.scheme, parts.netloc, parts.path, new_query, parts.fragment)
     )
@@ -388,6 +390,39 @@ class ProxyHandler(BaseHTTPRequestHandler):
     """HTTP 请求处理器"""
     server_version = "ClaudeProxy/0.2"
 
+    def _read_json_body(self) -> Optional[Dict[str, Any]]:
+        """
+        读取并解析 JSON 请求体
+        输入: 无（从 self.rfile 读取）
+        输出: 解析后的字典，如果解析失败则返回 None 并发送错误响应
+        """
+        body = self._read_body()
+        try:
+            return json.loads(body or b"{}")
+        except json.JSONDecodeError:
+            self._send_json({"error": "invalid_json"}, status=400)
+            return None
+
+    def _get_timeout_config(self, state: ProxyState) -> float:
+        """
+        获取超时配置
+        输入: ProxyState 对象
+        输出: 超时时间（秒）
+        """
+        timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
+        try:
+            return min(float(timeout_ms) / 1000.0, 10.0)
+        except (TypeError, ValueError):
+            return 10.0
+
+    def _run_background_task(self, task_func, task_name: str) -> None:
+        """
+        在后台线程中运行任务
+        输入: 任务函数, 任务名称
+        输出: 无（启动后台线程）
+        """
+        threading.Thread(target=task_func, daemon=True, name=task_name).start()
+
     def _send_json(self, data: Dict[str, Any], status: int = 200) -> None:
         """
         发送 JSON 响应
@@ -557,7 +592,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         输出: 无（直接写入响应）
         """
         path = urllib.parse.urlsplit(self.path).path
-        if path in ("/api/select", "/api/refresh-models", "/api/reload", "/api/reset", "/api/provider-auth", "/api/test-provider", "/api/refresh-and-test") and not self._ui_authorized():
+        if path in ("/api/select", "/api/refresh-models", "/api/reload", "/api/reset", "/api/provider-auth", "/api/test-provider", "/api/refresh-and-test", "/api/retest-failed") and not self._ui_authorized():
             return
         if path == "/api/select":
             return self._handle_select()
@@ -573,6 +608,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return self._handle_test_provider()
         if path == "/api/refresh-and-test":
             return self._handle_refresh_and_test()
+        if path == "/api/retest-failed":
+            return self._handle_retest_failed()
         if path == "/v1/messages":
             return self._proxy_messages()
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
@@ -583,11 +620,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         输入: 无（从请求体读取）
         输出: 无（直接写入响应）
         """
-        body = self._read_body()
-        try:
-            data = json.loads(body or b"{}")
-        except json.JSONDecodeError:
-            return self._send_json({"error": "invalid_json"}, status=400)
+        data = self._read_json_body()
+        if data is None:
+            return
         name = data.get("provider", "")
         state: ProxyState = self.server.state
         if state.set_selected_provider(name):
@@ -596,42 +631,56 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return self._send_json({"selected_provider": selected.get("name") if selected else ""})
         return self._send_json({"error": "unknown_provider"}, status=400)
 
+    def _refresh_provider_models(self, providers: List[Dict[str, Any]], state: ProxyState) -> List[Dict[str, Any]]:
+        """
+        刷新 providers 的模型列表（通用刷新逻辑）
+        输入: provider 列表, ProxyState 对象
+        输出: 刷新结果列表
+        """
+        token_param = state.get_config("TOKEN_PARAM", "token")
+        timeout = self._get_timeout_config(state)
+
+        results = []
+        for p in providers:
+            provider_name = p.get("name", "")
+            if provider_name == "Note":
+                results.append({"provider": provider_name, "updated": False, "error": "skip Note"})
+                continue
+
+            override = state.get_provider_override(provider_name)
+            models, error = fetch_models(p, token_param, timeout, override)
+            if models:
+                state.update_provider_models(provider_name, models)
+                logging.info("refresh: provider=%s count=%s", provider_name, len(models))
+                results.append({"provider": provider_name, "updated": True, "count": len(models)})
+            else:
+                logging.info("refresh: provider=%s failed error=%s", provider_name, error)
+                results.append({"provider": provider_name, "updated": False, "error": error or "unknown"})
+
+        return results
+
     def _handle_refresh_models(self) -> None:
         """
         处理刷新模型列表请求
         输入: 无（从请求体读取）
         输出: 无（直接写入响应）
         """
-        body = self._read_body()
-        try:
-            data = json.loads(body or b"{}")
-        except json.JSONDecodeError:
-            return self._send_json({"error": "invalid_json"}, status=400)
+        data = self._read_json_body()
+        if data is None:
+            return
         state: ProxyState = self.server.state
-        token_param = state.get_config("TOKEN_PARAM", "token")
-        timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
-        try:
-            timeout = min(float(timeout_ms) / 1000.0, 10.0)
-        except (TypeError, ValueError):
-            timeout = 10.0
         target = data.get("provider")
         providers = state.get_providers()
-        results = []
-        for p in providers:
-            if target and p.get("name") != target:
-                continue
-            if p.get("name") == "Note":
-                results.append({"provider": p.get("name", ""), "updated": False, "error": "skip Note"})
-                continue
-            override = state.get_provider_override(p.get("name", ""))
-            models, error = fetch_models(p, token_param, timeout, override)
-            if models:
-                state.update_provider_models(p.get("name", ""), models)
-                logging.info("models: refreshed provider=%s count=%s", p.get("name", ""), len(models))
-                results.append({"provider": p.get("name", ""), "updated": True, "count": len(models)})
-            else:
-                logging.info("models: refresh failed provider=%s error=%s", p.get("name", ""), error)
-                results.append({"provider": p.get("name", ""), "updated": False, "error": error or "unknown"})
+
+        # 筛选需要刷新的 providers
+        if target:
+            refresh_providers = [p for p in providers if p.get("name") == target]
+        else:
+            refresh_providers = providers
+
+        # 使用通用刷新逻辑
+        results = self._refresh_provider_models(refresh_providers, state)
+
         selected = state.get_selected_provider()
         payload = {
             "selected_provider": selected.get("name") if selected else "",
@@ -677,11 +726,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         输入: 无（从请求体读取）
         输出: 无（直接写入响应）
         """
-        body = self._read_body()
-        try:
-            data = json.loads(body or b"{}")
-        except json.JSONDecodeError:
-            return self._send_json({"error": "invalid_json"}, status=400)
+        data = self._read_json_body()
+        if data is None:
+            return
         name = data.get("provider", "")
         override = data.get("override", {})
         if not name or not isinstance(override, dict):
@@ -693,15 +740,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
     def _handle_test_provider(self) -> None:
         """
-        处理测试 provider 请求
+        处理测试 provider 请求（Test Selected）
         输入: 无（从请求体读取）
         输出: 无（直接写入响应）
         """
-        body = self._read_body()
-        try:
-            data = json.loads(body or b"{}")
-        except json.JSONDecodeError:
-            return self._send_json({"error": "invalid_json"}, status=400)
+        data = self._read_json_body()
+        if data is None:
+            return
         name = data.get("provider", "")
         model = data.get("model", "claude-sonnet-4-5-20250929")
         prompt = data.get("prompt", "hi")
@@ -710,9 +755,50 @@ class ProxyHandler(BaseHTTPRequestHandler):
         provider = next((p for p in providers if p.get("name") == name), None)
         if not provider:
             return self._send_json({"error": "provider_not_found"}, status=400)
+
+        # 直接调用 _test_provider 使用指定的模型
         test_result = self._test_provider(model, prompt, state)
         state.set_test_result(name, test_result.get("success", False))
-        return self._send_json(test_result)
+        return self._send_json({"success": test_result.get("success", False), "provider": name})
+
+    def _test_providers_batch(self, providers: List[Dict[str, Any]], prompt: str,
+                             state: ProxyState, refresh_models: bool = False) -> None:
+        """
+        批量测试 providers（通用测试逻辑）
+        输入: provider 列表, 测试提示词, ProxyState 对象, 是否刷新模型列表
+        输出: 无（直接更新 state）
+        """
+        original_selected = state.get_selected_provider()
+
+        # 1. 刷新模型列表（如果需要）
+        if refresh_models:
+            self._refresh_provider_models(providers, state)
+
+        # 2. 测试每个 provider
+        for p in providers:
+            provider_name = p.get("name", "")
+            if provider_name == "Note":
+                continue
+
+            # 获取模型列表
+            models = p.get("models", [])
+            if not models:
+                logging.warning("test_batch: provider=%s no models available, skipping test", provider_name)
+                state.set_test_result(provider_name, False)
+                continue
+
+            logging.info("test_batch: provider=%s using model=%s", provider_name, models[0])
+
+            # 使用第一个模型进行测试
+            test_model = models[0]
+            # 临时切换到这个 provider
+            state.set_selected_provider(provider_name)
+            test_result = self._test_provider(test_model, prompt, state)
+            state.set_test_result(provider_name, test_result.get("success", False))
+
+        # 恢复原来选中的 provider
+        if original_selected:
+            state.set_selected_provider(original_selected.get("name", ""))
 
     def _handle_refresh_and_test(self) -> None:
         """
@@ -720,73 +806,80 @@ class ProxyHandler(BaseHTTPRequestHandler):
         输入: 无（从请求体读取）
         输出: 无（立即返回，后台处理）
         """
-        body = self._read_body()
-        try:
-            data = json.loads(body or b"{}")
-        except json.JSONDecodeError:
-            return self._send_json({"error": "invalid_json"}, status=400)
+        data = self._read_json_body()
+        if data is None:
+            return
 
         prompt = data.get("prompt", "hi")
         state: ProxyState = self.server.state
 
         # 立即返回，在后台线程中处理
         def background_task():
-            token_param = state.get_config("TOKEN_PARAM", "token")
-            timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
-            try:
-                timeout = min(float(timeout_ms) / 1000.0, 10.0)
-            except (TypeError, ValueError):
-                timeout = 10.0
-
             providers = state.get_providers()
-            original_selected = state.get_selected_provider()
 
-            logging.info("refresh_and_test: starting background task for %d providers", len(providers))
-
+            # 1. 重置所有 provider 的测试状态
             for p in providers:
-                provider_name = p.get("name", "")
-                if provider_name == "Note":
-                    continue
+                if p.get("name") != "Note":
+                    state.set_test_result(p.get("name", ""), False)
 
-                # 1. 刷新模型列表
-                override = state.get_provider_override(provider_name)
-                models, error = fetch_models(p, token_param, timeout, override)
-                if models:
-                    state.update_provider_models(provider_name, models)
-                    logging.info("refresh_and_test: provider=%s models_count=%s", provider_name, len(models))
-                else:
-                    logging.warning("refresh_and_test: provider=%s refresh_failed error=%s", provider_name, error)
-                    state.set_test_result(provider_name, False)
-                    continue
+            # 2. 筛选出需要测试的 provider（test_result != True）
+            test_providers = [p for p in providers
+                            if p.get("name") != "Note" and p.get("test_result") != True]
 
-                # 2. 使用第一个模型进行测试
-                if models:
-                    test_model = models[0]
-                    # 临时切换到这个 provider
-                    state.set_selected_provider(provider_name)
-                    test_result = self._test_provider(test_model, prompt, state)
-                    state.set_test_result(provider_name, test_result.get("success", False))
-                else:
-                    state.set_test_result(provider_name, False)
+            logging.info("refresh_and_test: starting background task for %d providers", len(test_providers))
 
-            # 恢复原来选中的 provider
-            if original_selected:
-                state.set_selected_provider(original_selected.get("name", ""))
+            # 3. 批量测试（刷新模型列表）
+            self._test_providers_batch(test_providers, prompt, state, refresh_models=True)
 
             logging.info("refresh_and_test: background task completed")
 
         # 启动后台线程
-        threading.Thread(target=background_task, daemon=True).start()
+        self._run_background_task(background_task, "refresh_and_test")
 
         # 立即返回
         return self._send_json({"status": "started", "message": "Refresh and test started in background"})
 
+    def _handle_retest_failed(self) -> None:
+        """
+        处理重新测试失败的 provider 请求（异步处理）
+        不刷新模型列表，直接使用现有模型列表进行快速测试
+        输入: 无（从请求体读取）
+        输出: 无（立即返回，后台处理）
+        """
+        data = self._read_json_body()
+        if data is None:
+            return
+
+        prompt = data.get("prompt", "hi")
+        state: ProxyState = self.server.state
+
+        # 立即返回，在后台线程中处理
+        def background_task():
+            providers = state.get_providers()
+
+            # 筛选出需要测试的 provider（test_result != True）
+            test_providers = [p for p in providers
+                            if p.get("name") != "Note" and p.get("test_result") != True]
+
+            logging.info("retest_failed: starting background task for %d failed providers (skip refresh)", len(test_providers))
+
+            # 批量测试（不刷新模型列表）
+            self._test_providers_batch(test_providers, prompt, state, refresh_models=False)
+
+            logging.info("retest_failed: background task completed")
+
+        # 启动后台线程
+        self._run_background_task(background_task, "retest_failed")
+
+        # 立即返回
+        return self._send_json({"status": "started", "message": "Retest failed providers started in background"})
+
     def _forward_to_upstream(self, provider: Dict[str, Any], provider_override: Dict[str, Any],
                             client_headers: Dict[str, str], client_query: str, client_body: bytes,
-                            state: ProxyState) -> requests.Response:
+                            state: ProxyState, test_mode: bool = False) -> requests.Response:
         """
         转发请求到上游 provider（核心逻辑）
-        输入: provider 配置, provider 覆写配置, 客户端 headers/query/body, ProxyState 对象
+        输入: provider 配置, provider 覆写配置, 客户端 headers/query/body, ProxyState 对象, 是否测试模式
         输出: requests.Response 对象
         """
         provider_name = provider.get("name", "")
@@ -826,11 +919,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
         for k, v in sorted(headers.items()):
             logging.info("  %s: %s", k, v)
 
-        timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
-        try:
-            timeout = (10.0, float(timeout_ms) / 1000.0)
-        except (TypeError, ValueError):
-            timeout = (10.0, 600.0)
+        # 测试模式使用更短的超时时间
+        if test_mode:
+            timeout = (5.0, 15.0)  # 连接超时 5 秒，读取超时 15 秒
+        else:
+            timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
+            try:
+                timeout = (10.0, float(timeout_ms) / 1000.0)
+            except (TypeError, ValueError):
+                timeout = (10.0, 600.0)
 
         try:
             resp = requests.post(upstream_url, headers=headers, data=body, stream=True, timeout=timeout)
@@ -999,8 +1096,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
         client_body = json.dumps(request_data, separators=(',', ':')).encode("utf-8")
 
         try:
-            # 2. 转发处理（复用核心逻辑）
-            resp = self._forward_to_upstream(provider, provider_override, client_headers, client_query, client_body, state)
+            # 2. 转发处理（复用核心逻辑，使用测试模式的短超时）
+            resp = self._forward_to_upstream(provider, provider_override, client_headers, client_query, client_body, state, test_mode=True)
 
             # 3. 读取并记录响应内容（复用统一的日志记录逻辑）
             try:

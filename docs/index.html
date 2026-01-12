@@ -387,10 +387,6 @@
                     <td>重新加载 <code>config.json</code> 配置文件，无需重启代理</td>
                 </tr>
                 <tr>
-                    <td><code>Refresh & Test</code></td>
-                    <td>一键刷新并测试所有 provider（后台异步执行<span class="spoiler">，保持账户活跃</span>）</td>
-                </tr>
-                <tr>
                     <td><code>Refresh</code></td>
                     <td>刷新当前 provider 的模型列表（从上游 <code>/v1/models</code> 获取）</td>
                 </tr>
@@ -415,33 +411,18 @@
                     <td>复制当前 provider 的 API Base URL 到剪贴板</td>
                 </tr>
                 <tr>
-                    <td><code>Test</code></td>
-                    <td>测试当前选中的 provider（使用 Provider Test 面板中配置的模型和提示词）</td>
-                </tr>
-                <tr>
-                    <td><code>Apply</code></td>
-                    <td>应用当前配置的 HTTP 覆写规则（所有 provider 共享）</td>
+                    <td><code>Preset: Claude CLI</code></td>
+                    <td>选择 ClaudeCode 预设组合（Header + Request 覆写），选择后需点击 <code>Apply</code> 按钮应用</td>
                 </tr>
                 <tr>
                     <td><code>Reset Override</code></td>
-                    <td>重置 HTTP 覆写配置为默认 Auto 模式</td>
+                    <td>重置 HTTP 覆写配置为默认 Auto 模式，重置后需点击 <code>Apply</code> 按钮应用</td>
                 </tr>
                 <tr>
-                    <td><code>Preset: Claude CLI</code></td>
-                    <td>应用 ClaudeCode 预设组合（Header + Request 覆写）</td>
+                    <td><code>Apply</code></td>
+                    <td>应用当前配置的 HTTP 覆写规则（包括 Token 配置、Header Override、Request Override、Query Params），所有 provider 共享</td>
                 </tr>
             </table>
-
-            <div class="alert alert-info">
-                <strong><span class="spoiler">保活操作建议：</span></strong>
-                <ol>
-                    <li>点击 <code>Preset: Claude CLI</code> 按钮，自动配置 ClaudeCode 预设（Header + Request 覆写）</li>
-                    <li>点击 <code>Apply</code> 按钮应用配置</li>
-                    <li>在 Provider Test 面板中填写测试提示词（建议简短，节省额度）</li>
-                    <li>点击 <code>Refresh &amp; Test</code> 按钮批量测试所有 provider<span class="spoiler">，保持账户活跃</span></li>
-                </ol>
-                <strong>其他说明：</strong>签到 URL 可通过在 <code>config.json</code> 的 provider 中添加 <code>"checkin": "https://your-url"</code> 字段自定义。测试结果以颜色标识（绿色=成功，黑色=失败），完整日志记录到 <code>ccproxy.log</code>。
-            </div>
         </section>
 
         <!-- 高级功能 -->
@@ -459,6 +440,83 @@
 
             <div class="alert alert-info">
                 <strong>可扩展设计：</strong>你可以在 <code>config.json</code> 中定义多个自定义预设，Web UI 会自动识别并在下拉列表中显示。某些 provider 需要完整的客户端特征才能通过验证，建议先使用内置的 <code>ClaudeCode</code> 预设组合，如需自定义请参考下方说明。
+            </div>
+
+            <h3>Provider Test 功能</h3>
+            <p>Provider Test 面板提供三个测试按钮，用于批量或单独测试 provider 的可用性：</p>
+
+            <table>
+                <tr>
+                    <th>按钮</th>
+                    <th>功能说明</th>
+                </tr>
+                <tr>
+                    <td><code>Test Prompt</code></td>
+                    <td>测试提示词输入框（默认"当前项目如何构建为Docker版本"），所有测试按钮共用</td>
+                </tr>
+                <tr>
+                    <td><code>Refresh & Test All</code></td>
+                    <td>重置测试状态 + 刷新所有 provider 的模型列表 + 测试所有 provider（使用每个 provider 的第一个模型）</td>
+                </tr>
+                <tr>
+                    <td><code>Retest Failed</code></td>
+                    <td>只测试失败的 provider（不刷新模型列表，使用现有模型列表的第一个模型，速度快）</td>
+                </tr>
+                <tr>
+                    <td><code>Test Selected</code></td>
+                    <td>测试当前选中的 provider（可在 Test Model 输入框中指定模型，不刷新模型列表）</td>
+                </tr>
+            </table>
+
+            <div class="alert alert-success">
+                <strong><span class="spoiler">保活说明：</span></strong>上述测试功能可用于<span class="spoiler">保持账户活跃</span>。建议先点击 <code>Preset: Claude CLI</code> 选择预设，再点击 <code>Apply</code> 应用配置，然后使用 <code>Refresh &amp; Test All</code> 或 <code>Retest Failed</code> 批量测试所有 provider，<span class="spoiler">通过模仿 Claude Code 客户端发送请求来保持账户活跃</span>。
+            </div>
+
+            <h3>Provider Test 使用技巧</h3>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>💡 快速测试技巧</h4>
+                    <p><strong>场景：</strong>首次测试或快速验证所有 provider</p>
+                    <ol>
+                        <li>在 <code>config.json</code> 中手动填写每个 provider 的 <code>models</code> 列表</li>
+                        <li>点击 <code>Reload Config</code> 重新加载配置</li>
+                        <li>点击 <code>Retest Failed</code> 快速测试所有 provider</li>
+                    </ol>
+                    <p><strong>优势：</strong>跳过模型刷新步骤，速度快，避免某些站点只有特定模型可用的情况</p>
+                </div>
+
+                <div class="card">
+                    <h4>🔄 持续重测失败节点</h4>
+                    <p><strong>场景：</strong>某些 provider 暂时不可用，需要持续重试</p>
+                    <ol>
+                        <li>首次点击 <code>Refresh & Test All</code> 或 <code>Retest Failed</code></li>
+                        <li>等待测试完成，查看哪些 provider 失败（黑色标识）</li>
+                        <li>重复点击 <code>Retest Failed</code> 直到所有节点成功</li>
+                    </ol>
+                    <p><strong>优势：</strong>只测试失败的节点，成功的节点不会重复测试，节省时间和额度</p>
+                </div>
+
+                <div class="card">
+                    <h4>🎯 单独测试某个 provider</h4>
+                    <p><strong>场景：</strong>调试某个 provider 的配置或验证修复</p>
+                    <ol>
+                        <li>在 Providers 列表中点击要测试的 provider</li>
+                        <li>在 Provider Test 面板中填写测试模型和提示词</li>
+                        <li>点击 <code>Test Selected</code> 快速测试</li>
+                    </ol>
+                    <p><strong>优势：</strong>不影响其他 provider 的测试状态，快速验证单个节点</p>
+                </div>
+
+                <div class="card">
+                    <h4>📊 测试结果说明</h4>
+                    <p><strong>Provider 名称颜色：</strong></p>
+                    <ul>
+                        <li><strong style="color: #34c759;">绿色</strong> - 测试成功</li>
+                        <li><strong>黑色</strong> - 测试失败或未测试</li>
+                    </ul>
+                    <p><strong>日志查看：</strong>完整的测试日志（包括请求/响应详情）记录在 <code>ccproxy.log</code> 文件中，可用于查看测试失败的错误原因。</p>
+                </div>
             </div>
 
             <h3>如何生成自定义覆写配置</h3>

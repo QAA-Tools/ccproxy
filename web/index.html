@@ -15,7 +15,6 @@
           <h1>Claude Code Proxy</h1>
           <div class="hero-actions">
             <button class="ghost" id="reloadBtn">Reload Config</button>
-            <button class="ghost primary" id="refreshAndTestBtn">Refresh & Test</button>
           </div>
         </div>
         <div class="status" id="statusCard">
@@ -108,18 +107,34 @@
             </label>
           </div>
         </div>
-        <div class="override-section">
-          <h3>Provider Test</h3>
-          <div class="test-row">
-            <input id="testModel" placeholder="Model (e.g., claude-haiku-4-5-20251001)" value="claude-haiku-4-5-20251001" style="flex: 1;" />
-            <input id="testPrompt" placeholder="Test prompt (e.g., 当前项目如何构建为Docker版本)" value="当前项目如何构建为Docker版本" style="flex: 1;" />
-            <button class="ghost" id="testBtn">Test</button>
-          </div>
-        </div>
         <div class="auth-actions">
           <button class="ghost" id="presetClaudeCLI">Preset: Claude CLI</button>
           <button class="ghost" id="resetOverride">Reset Override</button>
           <button class="ghost primary" id="applyAuth">Apply</button>
+        </div>
+      </section>
+
+      <section class="panel auth-panel">
+        <div class="panel-header">
+          <h2>Provider Test</h2>
+        </div>
+        <div class="override-section">
+          <h3>Test Configuration</h3>
+          <div class="auth-grid">
+            <label class="field">
+              <span>Test Model</span>
+              <input id="testModel" placeholder="e.g., claude-haiku-4-5-20251001" value="claude-haiku-4-5-20251001" />
+            </label>
+            <label class="field">
+              <span>Test Prompt</span>
+              <input id="testPrompt" placeholder="e.g., 当前项目如何构建为Docker版本" value="当前项目如何构建为Docker版本" />
+            </label>
+          </div>
+        </div>
+        <div class="auth-actions">
+          <button class="ghost primary" id="refreshAndTestBtn">Refresh & Test All</button>
+          <button class="ghost" id="retestFailedBtn">Retest Failed</button>
+          <button class="ghost" id="testBtn">Test Selected</button>
         </div>
       </section>
 

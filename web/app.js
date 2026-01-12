@@ -29,6 +29,7 @@ const presetDirectBtn = document.getElementById("presetDirect");
 const presetXApiBtn = document.getElementById("presetXApi");
 const reloadBtn = document.getElementById("reloadBtn");
 const refreshAndTestBtn = document.getElementById("refreshAndTestBtn");
+const retestFailedBtn = document.getElementById("retestFailedBtn");
 const resetOverrideBtn = document.getElementById("resetOverride");
 const testModelEl = document.getElementById("testModel");
 const testPromptEl = document.getElementById("testPrompt");
@@ -448,6 +449,39 @@ refreshAndTestBtn.addEventListener("click", async () => {
     }, 2000);
   } finally {
     refreshAndTestBtn.disabled = false;
+  }
+  await refresh();
+});
+retestFailedBtn.addEventListener("click", async () => {
+  const prompt = testPromptEl.value || "当前项目如何构建为Docker版本";
+
+  // 如果输入框为空，填充实际使用的默认值
+  if (!testPromptEl.value) {
+    testPromptEl.value = prompt;
+  }
+
+  retestFailedBtn.disabled = true;
+  retestFailedBtn.textContent = "Running...";
+  try {
+    const res = await fetch("/api/retest-failed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    const result = await res.json();
+    console.log("Retest Failed results:", result);
+    retestFailedBtn.textContent = "✓ Done";
+    setTimeout(() => {
+      retestFailedBtn.textContent = "Retest Failed";
+    }, 2000);
+  } catch (err) {
+    console.error(err);
+    retestFailedBtn.textContent = "✗ Error";
+    setTimeout(() => {
+      retestFailedBtn.textContent = "Retest Failed";
+    }, 2000);
+  } finally {
+    retestFailedBtn.disabled = false;
   }
   await refresh();
 });
