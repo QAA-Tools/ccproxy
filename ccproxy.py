@@ -34,6 +34,8 @@ HOP_HEADERS = {
 def extract_base_url(api_base_url: str) -> str:
     if "/anthropic/v1/messages" in api_base_url:
         return api_base_url.replace("/anthropic/v1/messages", "")
+    if "/claude/v1/messages" in api_base_url:
+        return api_base_url.replace("/claude/v1/messages", "")
     if "/v1/chat/completions" in api_base_url:
         return api_base_url.replace("/v1/chat/completions", "")
     if "/v1/messages" in api_base_url:
