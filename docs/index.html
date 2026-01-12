@@ -492,6 +492,10 @@
                 <strong>可扩展设计：</strong>你可以在 <code>config.json</code> 中定义多个自定义预设，Web UI 会自动识别并在下拉列表中显示。某些 provider 需要完整的客户端特征才能通过验证，建议先使用内置的 <code>ClaudeCode</code> 预设组合，如需自定义请参考下方说明。
             </div>
 
+            <div class="alert alert-warning">
+                <strong>注意：</strong>内置的 <code>ClaudeCode</code> 预设会全部覆盖请求头和请求体，仅用于 Provider Test 或转发非 Claude Code 的请求。正常使用 Claude Code 时，如需覆写（如固定 IP），应自定义预设仅覆盖部分字段（如 <code>X-Real-IP</code>、<code>X-Forwarded-For</code>），避免破坏工具调用等功能。
+            </div>
+
             <h3>Provider Test 使用技巧</h3>
             <p>Provider Test 面板提供三个测试按钮（Refresh & Test All、Retest Failed、Test Selected），用于批量或单独测试 provider 的可用性。测试配置包括 Test Model 和 Test Prompt 两个输入框，所有测试按钮共用。</p>
 
