@@ -209,7 +209,7 @@
             <h2>简介</h2>
             <p>轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换等功能。</p>
             <p><strong>适用场景：</strong>在多个公益站/转发站之间快速切换，无需重启 Claude Code。</p>
-            <p><strong>核心特性：</strong>支持 HTTP 覆写配置（Header/Request/Query 参数）绕过站点检测；提供 Refresh & Test 功能一键测试所有 provider 并保持账户活跃。</p>
+            <p><strong>核心特性：</strong>支持 HTTP 覆写配置（Header/Request/Query 参数）绕过站点检测；提供 Refresh & Test 功能一键测试所有 provider <del>并保持账户活跃</del>。</p>
         </section>
 
         <!-- 快速开始 -->
@@ -374,7 +374,7 @@
                 </tr>
                 <tr>
                     <td><code>Refresh & Test</code></td>
-                    <td>一键刷新并测试所有 provider（后台异步执行，保持账户活跃）</td>
+                    <td>一键刷新并测试所有 provider（后台异步执行<del>，保持账户活跃</del>）</td>
                 </tr>
                 <tr>
                     <td><code>Refresh</code></td>
@@ -424,7 +424,7 @@
                     <li>点击 <code>Preset: Claude CLI</code> 按钮，自动配置 ClaudeCode 预设（Header + Request 覆写）</li>
                     <li>点击 <code>Apply</code> 按钮应用配置</li>
                     <li>在 Provider Test 面板中填写测试提示词（建议简短，节省额度）</li>
-                    <li>点击 <code>Refresh &amp; Test</code> 按钮批量测试所有 provider，保持账户活跃</li>
+                    <li>点击 <code>Refresh &amp; Test</code> 按钮批量测试所有 provider<del>，保持账户活跃</del></li>
                 </ol>
                 <strong>其他说明：</strong>签到 URL 可通过在 <code>config.json</code> 的 provider 中添加 <code>"checkin": "https://your-url"</code> 字段自定义。测试结果以颜色标识（绿色=成功，黑色=失败），完整日志记录到 <code>ccproxy.log</code>。
             </div>
