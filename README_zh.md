@@ -25,7 +25,7 @@ cp config.in.json config.json
 # 3. 启动代理
 python ccproxy.py --config config.json
 
-# 4. 配置 Claude Code (~/.claude/config.json)
+# 4. 配置 Claude Code (~/.claude/settings.json)
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "<你的APIKEY>",

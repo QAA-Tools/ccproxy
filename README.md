@@ -25,7 +25,7 @@ cp config.in.json config.json
 # 3. Start proxy
 python ccproxy.py --config config.json
 
-# 4. Configure Claude Code (~/.claude/config.json)
+# 4. Configure Claude Code (~/.claude/settings.json)
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "<YOUR_APIKEY>",

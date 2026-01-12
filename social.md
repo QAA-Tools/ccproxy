@@ -50,7 +50,7 @@ cp config.in.json config.json    # Linux/macOS
 python ccproxy.py --config config.json
 ```
 
-4. 修改 Claude Code 配置（`~/.claude/config.json` 或 `%USERPROFILE%\.claude\config.json`）：
+4. 修改 Claude Code 配置（`~/.claude/settings.json` 或 `%USERPROFILE%\.claude\settings.json`）：
 ```json
 {
   "env": {
@@ -78,7 +78,7 @@ python ccproxy.py --config config.json
 - 点 **签到** 按钮快速跳转到站点签到页面领额度
 
 **进阶技巧：**
-- 点击 **settings.json** 按钮，将剪贴板粘贴到 `~/.claude/config.json` 文件中，也可以不重启 Claude Code 立即切换供应商
+- 点击 **settings.json** 按钮，将剪贴板粘贴到 `~/.claude/settings.json` 文件中，也可以不重启 Claude Code 立即切换供应商
 
 ---
 
