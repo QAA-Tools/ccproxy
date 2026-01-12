@@ -377,6 +377,8 @@
             <p>浏览器访问 <code>http://127.0.0.1:3456</code>，使用 <code>APIKEY</code> 作为密码登录（用户名任意）。</p>
 
             <h3>按钮功能说明</h3>
+
+            <h4>全局按钮</h4>
             <table>
                 <tr>
                     <th>按钮</th>
@@ -386,13 +388,13 @@
                     <td><code>Reload Config</code></td>
                     <td>重新加载 <code>config.json</code> 配置文件，无需重启代理</td>
                 </tr>
+            </table>
+
+            <h4>Provider 操作按钮（每个 Provider 卡片上）</h4>
+            <table>
                 <tr>
-                    <td><code>Refresh</code></td>
-                    <td>刷新当前 provider 的模型列表（从上游 <code>/v1/models</code> 获取）</td>
-                </tr>
-                <tr>
-                    <td><code>Copy</code></td>
-                    <td>复制 <code>/model xxx</code> 命令到剪贴板，粘贴到 Claude Code 切换模型</td>
+                    <th>按钮</th>
+                    <th>功能说明</th>
                 </tr>
                 <tr>
                     <td><code>签到</code></td>
@@ -410,6 +412,30 @@
                     <td><code>URL</code></td>
                     <td>复制当前 provider 的 API Base URL 到剪贴板</td>
                 </tr>
+            </table>
+
+            <h4>Models 面板按钮</h4>
+            <table>
+                <tr>
+                    <th>按钮</th>
+                    <th>功能说明</th>
+                </tr>
+                <tr>
+                    <td><code>Refresh</code></td>
+                    <td>刷新当前 provider 的模型列表（从上游 <code>/v1/models</code> 获取）</td>
+                </tr>
+                <tr>
+                    <td><code>Copy</code></td>
+                    <td>复制 <code>/model xxx</code> 命令到剪贴板，粘贴到 Claude Code 切换模型</td>
+                </tr>
+            </table>
+
+            <h4>HTTP Overrides 面板按钮</h4>
+            <table>
+                <tr>
+                    <th>按钮</th>
+                    <th>功能说明</th>
+                </tr>
                 <tr>
                     <td><code>Preset: Claude CLI</code></td>
                     <td>选择 ClaudeCode 预设组合（Header + Request 覆写），选择后需点击 <code>Apply</code> 按钮应用</td>
@@ -423,6 +449,30 @@
                     <td>应用当前配置的 HTTP 覆写规则（包括 Token 配置、Header Override、Request Override、Query Params），所有 provider 共享</td>
                 </tr>
             </table>
+
+            <h4>Provider Test 面板按钮</h4>
+            <table>
+                <tr>
+                    <th>按钮</th>
+                    <th>功能说明</th>
+                </tr>
+                <tr>
+                    <td><code>Refresh & Test All</code></td>
+                    <td>重置测试状态 + 刷新所有 provider 的模型列表 + 测试所有 provider（使用每个 provider 的第一个模型）</td>
+                </tr>
+                <tr>
+                    <td><code>Retest Failed</code></td>
+                    <td>只测试失败的 provider（不刷新模型列表，使用现有模型列表的第一个模型，速度快）</td>
+                </tr>
+                <tr>
+                    <td><code>Test Selected</code></td>
+                    <td>测试当前选中的 provider（可在 Test Model 输入框中指定模型，不刷新模型列表）</td>
+                </tr>
+            </table>
+
+            <div class="alert alert-success">
+                <strong><span class="spoiler">保活说明：</span></strong>测试功能可用于<span class="spoiler">保持账户活跃</span>。建议先点击 <code>Preset: Claude CLI</code> 选择预设，再点击 <code>Apply</code> 应用配置，然后使用 <code>Refresh &amp; Test All</code> 或 <code>Retest Failed</code> 批量测试所有 provider，<span class="spoiler">通过模仿 Claude Code 客户端发送请求来保持账户活跃</span>。
+            </div>
         </section>
 
         <!-- 高级功能 -->
@@ -442,37 +492,8 @@
                 <strong>可扩展设计：</strong>你可以在 <code>config.json</code> 中定义多个自定义预设，Web UI 会自动识别并在下拉列表中显示。某些 provider 需要完整的客户端特征才能通过验证，建议先使用内置的 <code>ClaudeCode</code> 预设组合，如需自定义请参考下方说明。
             </div>
 
-            <h3>Provider Test 功能</h3>
-            <p>Provider Test 面板提供三个测试按钮，用于批量或单独测试 provider 的可用性：</p>
-
-            <table>
-                <tr>
-                    <th>按钮</th>
-                    <th>功能说明</th>
-                </tr>
-                <tr>
-                    <td><code>Test Prompt</code></td>
-                    <td>测试提示词输入框（默认"当前项目如何构建为Docker版本"），所有测试按钮共用</td>
-                </tr>
-                <tr>
-                    <td><code>Refresh & Test All</code></td>
-                    <td>重置测试状态 + 刷新所有 provider 的模型列表 + 测试所有 provider（使用每个 provider 的第一个模型）</td>
-                </tr>
-                <tr>
-                    <td><code>Retest Failed</code></td>
-                    <td>只测试失败的 provider（不刷新模型列表，使用现有模型列表的第一个模型，速度快）</td>
-                </tr>
-                <tr>
-                    <td><code>Test Selected</code></td>
-                    <td>测试当前选中的 provider（可在 Test Model 输入框中指定模型，不刷新模型列表）</td>
-                </tr>
-            </table>
-
-            <div class="alert alert-success">
-                <strong><span class="spoiler">保活说明：</span></strong>上述测试功能可用于<span class="spoiler">保持账户活跃</span>。建议先点击 <code>Preset: Claude CLI</code> 选择预设，再点击 <code>Apply</code> 应用配置，然后使用 <code>Refresh &amp; Test All</code> 或 <code>Retest Failed</code> 批量测试所有 provider，<span class="spoiler">通过模仿 Claude Code 客户端发送请求来保持账户活跃</span>。
-            </div>
-
             <h3>Provider Test 使用技巧</h3>
+            <p>Provider Test 面板提供三个测试按钮（Refresh & Test All、Retest Failed、Test Selected），用于批量或单独测试 provider 的可用性。测试配置包括 Test Model 和 Test Prompt 两个输入框，所有测试按钮共用。</p>
 
             <div class="card-grid">
                 <div class="card">
