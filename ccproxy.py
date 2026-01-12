@@ -361,6 +361,13 @@ def fetch_models(provider: Dict[str, Any], token_param: str, timeout: float,
         if models:
             return models, None
         return None, "empty model list"
+    except requests.HTTPError as exc:
+        # HTTP 错误：记录响应体内容
+        try:
+            error_body = resp.text[:500]
+            return None, f"{exc} - {error_body}"
+        except Exception:
+            return None, str(exc)
     except Exception as exc:
         return None, str(exc)
 
