@@ -319,14 +319,13 @@ function renderRequestOverrides(state) {
 
 function renderAuth(state) {
   const override = state.selected_override || {};
-  const hasOverride = Object.keys(override).length > 0;
   tokenInEl.value = override.token_in !== undefined ? override.token_in : "";
   headerOverrideEl.value = override.header_override || "";
   requestOverrideEl.value = override.request_override || "";
   queryParamsEl.value = override.query_params || "";
   tokenParamEl.value = override.token_param || "";
-  tokenHeaderEl.value = override.token_header || (hasOverride ? "" : "Authorization");
-  tokenHeaderFormatEl.value = override.token_header_format || (hasOverride ? "" : "Bearer {token}");
+  tokenHeaderEl.value = override.token_header || "";
+  tokenHeaderFormatEl.value = override.token_header_format || "";
 }
 
 async function selectProvider(name) {

@@ -316,20 +316,11 @@ class ProxyRequest:
 
         if inject_fields:
             try:
-                request_data = json.loads(self.client_body)
-                ordered = {}
-                if "model" in request_data:
-                    ordered["model"] = request_data["model"]
-                if "messages" in request_data:
-                    ordered["messages"] = request_data["messages"]
-                for field in ["system", "tools", "metadata"]:
-                    if field in inject_fields and field not in request_data:
-                        ordered[field] = inject_fields[field]
-                    elif field in request_data:
-                        ordered[field] = request_data[field]
-                for k, v in request_data.items():
-                    if k not in ordered:
-                        ordered[k] = v
+                ordered = json.loads(self.client_body)
+                # 注入/覆盖字段
+                # 通常用于：补充核心字段（system, tools, metadata）和增加配置字段（max_tokens, stream, thinking）
+                for k, v in inject_fields.items():
+                    ordered[k] = v
                 return json.dumps(ordered, separators=(',', ':')).encode("utf-8")
             except Exception:
                 pass
@@ -902,19 +893,30 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         elapsed = time.time() - start_time
 
-        # 显示响应内容
+        # 显示响应内容（复用统一的日志记录逻辑）
+        self._log_response_content(b"".join(all_chunks), "proxy")
+
+        logging.info("proxy: provider=%s completed bytes=%s elapsed=%.1fs", provider_name, total_bytes, elapsed)
+
+    def _log_response_content(self, content: bytes, log_prefix: str = "proxy") -> None:
+        """
+        记录响应内容到日志（统一的响应内容记录逻辑）
+        输入: 响应内容字节, 日志前缀
+        输出: 无（直接记录日志）
+        """
         try:
-            text = b"".join(all_chunks).decode("utf-8", errors="replace")
+            text = content.decode("utf-8", errors="replace")
             try:
                 resp_data = json.loads(text)
-                logging.info("proxy: response_body:")
+                logging.info("%s: response_body:", log_prefix)
                 for key, value in resp_data.items():
                     value_str = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
                     logging.info("  %s: %s", key, value_str)
             except json.JSONDecodeError:
                 if text.startswith("event:") or "data:" in text:
-                    logging.info("proxy: response_body (SSE stream):")
+                    logging.info("%s: response_body (SSE stream):", log_prefix)
                     accumulated_text = []
+                    accumulated_thinking = []
                     for event in text.split('\n\n'):
                         if not event.strip():
                             continue
@@ -926,18 +928,26 @@ class ProxyHandler(BaseHTTPRequestHandler):
                             elif line.startswith("data:"):
                                 try:
                                     data = json.loads(line[5:].strip())
-                                    if event_type == "content_block_delta" and data.get("delta", {}).get("type") == "text_delta":
+                                    delta_type = data.get("delta", {}).get("type")
+                                    if event_type == "content_block_delta" and delta_type == "text_delta":
                                         accumulated_text.append(data["delta"]["text"])
+                                    elif event_type == "content_block_delta" and delta_type == "thinking_delta":
+                                        accumulated_thinking.append(data["delta"]["thinking"])
                                     else:
                                         if accumulated_text:
                                             logging.info("  [content_block_delta] accumulated_text:\n%s", "".join(accumulated_text))
                                             accumulated_text = []
+                                        if accumulated_thinking:
+                                            logging.info("  [content_block_delta] accumulated_thinking:\n%s", "".join(accumulated_thinking))
+                                            accumulated_thinking = []
                                         data_str = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
                                         logging.info("  [%s] %s", event_type or "data", data_str)
                                 except:
                                     logging.info("  [%s] %s", event_type or "data", line[5:].strip())
                     if accumulated_text:
                         logging.info("  [content_block_delta] accumulated_text:\n%s", "".join(accumulated_text))
+                    if accumulated_thinking:
+                        logging.info("  [content_block_delta] accumulated_thinking:\n%s", "".join(accumulated_thinking))
                 else:
                     preview_len = 500
                     if len(text) <= preview_len * 2:
@@ -945,11 +955,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     else:
                         preview = text[:preview_len] + " ... " + text[-preview_len:]
                     preview = preview.replace("\n", "\\n").replace("\r", "")
-                    logging.info("proxy: response_preview=%s", preview)
+                    logging.info("%s: response_preview=%s", log_prefix, preview)
         except Exception:
             pass
-
-        logging.info("proxy: provider=%s completed bytes=%s elapsed=%.1fs", provider_name, total_bytes, elapsed)
 
     def _test_provider(self, model: str, prompt: str, state: ProxyState) -> Dict[str, Any]:
         """
@@ -966,41 +974,51 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         logging.info("test: provider=%s model=%s prompt=%s", provider_name, model, prompt[:50])
 
-        # 1. 构造测试请求
-        client_headers = {"Content-Type": "application/json"}
+        # 1. 构造测试请求 - 最小化请求，让 Override 框架注入其他字段
+        # 只有 prompt 从网页获取，其他字段通过 config.json 的 RequestOverrides 注入
+        provider_token = provider.get("token") or provider.get("api_key") or ""
+        client_headers = {
+            "Authorization": provider_token,
+            "Content-Type": "application/json"
+        }
         client_query = ""
-        client_body = json.dumps({
+
+        # 最小化的请求体，只包含核心业务字段
+        # 在 Override 模式下：system, tools, metadata, max_tokens, stream, thinking 将通过 RequestOverrides 注入
+        # 在 Passthrough 模式下：添加基本的必需字段以确保兼容性
+        request_data = {
             "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 100
-        }).encode("utf-8")
+            "messages": [{
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": prompt,
+                    "cache_control": {"type": "ephemeral"}
+                }]
+            }],
+            "max_tokens": 100,
+            "stream": True
+        }
+
+        client_body = json.dumps(request_data, separators=(',', ':')).encode("utf-8")
 
         try:
             # 2. 转发处理（复用核心逻辑）
             resp = self._forward_to_upstream(provider, provider_override, client_headers, client_query, client_body, state)
 
-            # 3. 记录响应内容
+            # 3. 读取并记录响应内容（复用统一的日志记录逻辑）
             try:
-                response_text = resp.text
-                try:
-                    resp_data = json.loads(response_text)
-                    logging.info("test: response_body:")
-                    for key, value in resp_data.items():
-                        value_str = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
-                        logging.info("  %s: %s", key, value_str)
-                except json.JSONDecodeError:
-                    preview_len = 200
-                    preview = response_text[:preview_len] + "..." if len(response_text) > preview_len else response_text
-                    logging.info("test: response_preview=%s", preview)
-            except Exception:
-                pass
+                response_content = resp.content
+                self._log_response_content(response_content, "test")
+            except Exception as e:
+                logging.warning("test: failed to read response content: %s", str(e))
 
             # 4. 返回结果
             if resp.status_code == 200:
                 logging.info("test: provider=%s success", provider_name)
                 return {"success": True, "status": resp.status_code}
             logging.warning("test: provider=%s failed status=%d", provider_name, resp.status_code)
-            return {"success": False, "status": resp.status_code, "error": resp.text[:200]}
+            return {"success": False, "status": resp.status_code, "error": "see logs"}
         except Exception as exc:
             logging.error("test: provider=%s error=%s", provider_name, str(exc)[:200])
             return {"success": False, "error": str(exc)[:200]}
@@ -1075,7 +1093,8 @@ def main() -> None:
     server = ThreadingHTTPServer((host, port), ProxyHandler)
     server.state = state  # type: ignore[attr-defined]
 
-    threading.Thread(target=refresh_all_models, args=(state,), daemon=True).start()
+    # 禁用启动时自动刷新模型列表，可通过网页手动刷新
+    # threading.Thread(target=refresh_all_models, args=(state,), daemon=True).start()
 
     print(f"Proxy listening on http://{host}:{port}")
     server.serve_forever()

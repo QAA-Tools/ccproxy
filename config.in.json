@@ -10,8 +10,26 @@
   "_comment": "后期如果cherry studio等客户端无法使用(某些站点进行检测限制时),则根据正常的日志,增加这里的覆写项即可",
   "HeaderOverrides": {
     "ClaudeCode": {
+      "Accept": "application/json",
       "User-Agent": "claude-cli/2.0.76 (external, cli)",
-      "x-app": "cli"
+      "X-Forwarded-For": "211.222.233.244",
+      "X-Forwarded-Proto": "https",
+      "X-Real-IP": "211.222.233.244",
+      "X-Stainless-Arch": "x64",
+      "X-Stainless-Lang": "js",
+      "X-Stainless-OS": "Windows",
+      "X-Stainless-Package-Version": "0.70.0",
+      "X-Stainless-Retry-Count": "0",
+      "X-Stainless-Runtime": "node",
+      "X-Stainless-Runtime-Version": "v24.11.0",
+      "X-Stainless-Timeout": "600",
+      "accept-language": "*",
+      "anthropic-beta": "interleaved-thinking-2025-05-14",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+      "x-app": "cli",
+      "x-stainless-helper-method": "stream"
     },
     "None (Passthrough)": {},
     "cherrystudio": {
@@ -20,10 +38,26 @@
     }
   },
   "RequestOverrides": {
-    "None (Passthrough)": {},
     "ClaudeCode": {
-      "tools": []
-    }
+      "system": [
+        {
+          "type": "text",
+          "text": "You are Claude Code, Anthropic's official CLI for Claude.",
+          "cache_control": {"type": "ephemeral"}
+        }
+      ],
+      "tools": [],
+      "metadata": {
+        "user_id": "user_a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456_account__session_12345678-90ab-cdef-1234-567890abcdef"
+      },
+      "max_tokens": 32000,
+      "thinking": {
+        "budget_tokens": 31999,
+        "type": "enabled"
+      },
+      "stream": true
+    },
+    "None (Passthrough)": {}
   },
   "Providers": [
     {
