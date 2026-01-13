@@ -225,8 +225,8 @@
         <section id="intro">
             <h2>简介</h2>
             <p>轻量级 Claude API 反向代理工具，提供 Web UI 管理多个供应商，支持自动模型发现、即时切换等功能。</p>
-            <p><strong>适用场景：</strong>在多个公益站/转发站之间快速切换，无需重启 Claude Code。</p>
-            <p><strong>核心特性：</strong>支持 HTTP 覆写配置（Header/Request/Query 参数）绕过站点检测；提供 Refresh & Test 功能一键测试所有 provider<span class="spoiler">并保持账户活跃</span>。</p>
+            <p><strong>适用场景：</strong>无需修改 Claude Code 配置，在多个转发站之间快速切换。</p>
+            <p><strong>拓展功能：</strong>测试模型健康<span class="spoiler">（保持囤囤鼠的账户活跃）。</span></p>
         </section>
 
         <!-- 快速开始 -->
@@ -240,7 +240,7 @@
                 </div>
                 <div class="step">
                     <strong>编辑配置文件</strong>
-                    <p>打开 <code>config.json</code>，填入你的供应商信息（详见下方配置说明）。</p>
+                    <p>打开 <code>config.json</code>，填入转发站信息。</p>
                 </div>
                 <div class="step">
                     <strong>启动代理</strong>
@@ -251,7 +251,6 @@
                     <ul>
                         <li>浏览器访问 <code>http://127.0.0.1:3456</code> 查看状态并管理 provider</li>
                         <li>使用 <code>sk-your-local-ui-key</code> 作为密码登录（用户名任意）</li>
-                        <li>首次使用建议先点击 <code>Refresh</code> 按钮，确保能正常获取上游模型</li>
                     </ul>
                 </div>
                 <div class="step">
@@ -267,7 +266,7 @@
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456"
   }
 }</code></pre>
-                    <p>修改后需要重启 Claude Code。</p>
+                    <p>修改后无需重启 Claude Code。</p>
                 </div>
             </div>
         </section>
@@ -311,7 +310,7 @@
                 </tr>
                 <tr>
                     <td><code>APIKEY</code></td>
-                    <td>本地认证密钥 - <strong>用于 Claude Code 连接（<code>ANTHROPIC_AUTH_TOKEN</code>）和 Web UI 登录（用户名任意）</strong></td>
+                    <td>本地认证密钥 - <strong>用于 Claude Code 连接（<code>ANTHROPIC_AUTH_TOKEN</code>）和 Web UI 登录</strong></td>
                 </tr>
                 <tr>
                     <td><code>Providers</code></td>
@@ -399,8 +398,8 @@
                     <td>复制当前 provider 的 API Base URL 到剪贴板</td>
                 </tr>
                 <tr>
-                    <td><code>Select</code> / <code>Selected</code></td>
-                    <td>选择当前 provider 作为活动 provider（已选中时显示 Selected 并禁用）</td>
+                    <td><code>Select</code> </td>
+                    <td>选择当前 provider 作为活动 provider（已选中时显示 Selected ）</td>
                 </tr>
             </table>
 
@@ -421,7 +420,7 @@
             </table>
 
             <h4>4. HTTP Overrides 面板按钮</h4>
-            <p>此面板用于配置代理转发时的 HTTP 覆写规则（不影响 Provider Test 功能，测试会自动选择合适的配置），分为两个部分：</p>
+            <p>此面板用于配置代理转发时的 HTTP 覆写规则，分为两个部分：</p>
 
             <h5>Token Configuration（Token 配置）</h5>
             <table>
@@ -498,42 +497,18 @@
             <h5>使用技巧</h5>
             <div class="card-grid">
                 <div class="card">
-                    <h4>💡 快速测试</h4>
-                    <p><strong>适用场景：</strong>首次测试或快速验证所有 provider</p>
+                    <h4>💡 测试站点</h4>
                     <ol>
-                        <li>在 <code>config.json</code> 中手动填写每个 provider 的 <code>models</code> 列表</li>
+                        <li>在 <code>config.json</code> 中填写每个 provider 的 <code>models</code> 列表</li>
                         <li>点击 <code>Reload Config</code> 重新加载配置</li>
-                        <li>点击 <code>Retest Failed</code> 快速测试所有 provider</li>
-                    </ol>
-                    <p><strong>优势：</strong>跳过模型刷新，速度快</p>
-                </div>
-
-                <div class="card">
-                    <h4>🔄 持续重测</h4>
-                    <p><strong>适用场景：</strong>某些 provider 暂时不可用，需要持续重试</p>
-                    <ol>
-                        <li>首次点击 <code>Refresh & Test All</code> 或 <code>Retest Failed</code></li>
-                        <li>等待测试完成，查看失败的 provider（黑色标识）</li>
                         <li>重复点击 <code>Retest Failed</code> 直到所有节点成功</li>
                     </ol>
-                    <p><strong>优势：</strong>只测试失败节点，节省时间和额度</p>
-                </div>
-
-                <div class="card">
-                    <h4>🎯 单独测试</h4>
-                    <p><strong>适用场景：</strong>调试某个 provider 的配置或验证修复</p>
-                    <ol>
-                        <li>在 Providers 列表中点击要测试的 provider</li>
-                        <li>在 Test Model 输入框中指定模型（可选）</li>
-                        <li>点击 <code>Test Selected</code></li>
-                    </ol>
-                    <p><strong>优势：</strong>不影响其他 provider 的测试状态</p>
                 </div>
 
                 <div class="card">
                     <h4>📊 查看日志</h4>
-                    <p>测试完成后，刷新页面可查看 Provider 名称颜色变化：<strong style="color: #34c759;">绿色</strong>表示测试成功，<strong>黑色</strong>表示测试失败或未测试。</p>
-                    <p>完整的测试日志（包括请求/响应详情）记录在 <code>ccproxy.log</code> 文件中，可用于查看测试失败的错误原因。</p>
+                    <p>测试完成后，刷新页面可查看 Provider 名称颜色变化：<strong style="color: #34c759;">绿色</strong>表示测试成功。</p>
+                    <p>程序会输出每次请求与返回内容，用于分析测试失败的原因。</p>
                 </div>
             </div>
 
@@ -643,15 +618,6 @@
                         <li>测试是否能正常访问 provider</li>
                     </ul>
                 </div>
-            </div>
-
-            <div class="alert alert-info">
-                <strong>RequestOverrides 结构说明：</strong>
-                <ul>
-                    <li><code>RequestOverrides.ClaudeCode</code> 应包含标准 Claude Code 请求的完整结构（如 system, tools, metadata, max_tokens, stream, thinking 等字段），用于注入到实际请求中</li>
-                    <li>测试请求使用最小化的请求体（仅包含 model, messages），其他字段会自动从所选的 RequestOverrides 预设中合并</li>
-                    <li>你可以为不同场景创建不同的预设（如调试用的小 max_tokens，生产用的大 max_tokens 等）</li>
-                </ul>
             </div>
 
             <h3>3. 后台运行与状态持久化</h3>
