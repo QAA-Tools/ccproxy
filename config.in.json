@@ -32,6 +32,24 @@
       "x-app": "cli",
       "x-stainless-helper-method": "stream"
     },
+    "OpenAI": {
+      "accept": "*/*",
+      "accept-language": "zh-CN",
+      "content-type": "application/json",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) CherryStudio/1.7.13 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36",
+      "x-title": "Cherry Studio",
+      "X-Forwarded-For": "211.222.233.244",
+      "X-Forwarded-Proto": "https",
+      "X-Real-IP": "211.222.233.244",
+      "http-referer": "https://cherry-ai.com",
+      "priority": "u=1, i",
+      "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "cross-site"
+    },
     "None (Passthrough)": {},
     "cherrystudio": {
       "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)",
@@ -57,6 +75,12 @@
         "type": "enabled"
       },
       "stream": true
+    },
+    "OpenAI": {
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      }
     },
     "None (Passthrough)": {}
   },

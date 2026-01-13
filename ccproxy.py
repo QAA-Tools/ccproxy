@@ -621,6 +621,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return self._handle_retest_failed()
         if path == "/v1/messages":
             return self._proxy_messages()
+        if path == "/v1/chat/completions":
+            return self._proxy_messages()
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
 
     def _handle_select(self) -> None:
@@ -749,15 +751,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
     def _handle_test_provider(self) -> None:
         """
-        处理测试 provider 请求（Test Selected）
+        处理测试 provider 请求（Test Selected）（异步处理）
         输入: 无（从请求体读取）
-        输出: 无（直接写入响应）
+        输出: 无（立即返回，后台处理）
         """
         data = self._read_json_body()
         if data is None:
             return
         name = data.get("provider", "")
-        model = data.get("model", "claude-sonnet-4-5-20250929")
+        model = data.get("model", "")  # 可选的指定模型
         prompt = data.get("prompt", "hi")
         state: ProxyState = self.server.state
         providers = state.get_providers()
@@ -765,16 +767,22 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if not provider:
             return self._send_json({"error": "provider_not_found"}, status=400)
 
-        # 直接调用 _test_provider 使用指定的模型
-        test_result = self._test_provider(model, prompt, state)
-        state.set_test_result(name, test_result.get("success", False))
-        return self._send_json({"success": test_result.get("success", False), "provider": name})
+        # 立即返回，在后台线程中处理
+        def background_task():
+            # 复用批量测试逻辑，传入单个 provider 的列表和指定的模型
+            self._test_providers_batch([provider], prompt, state, refresh_models=False, test_model=model if model else None)
+
+        # 启动后台线程
+        self._run_background_task(background_task, f"test_{name}")
+
+        # 立即返回
+        return self._send_json({"status": "started", "message": f"Test started for {name}"})
 
     def _test_providers_batch(self, providers: List[Dict[str, Any]], prompt: str,
-                             state: ProxyState, refresh_models: bool = False) -> None:
+                             state: ProxyState, refresh_models: bool = False, test_model: Optional[str] = None) -> None:
         """
         批量测试 providers（通用测试逻辑）
-        输入: provider 列表, 测试提示词, ProxyState 对象, 是否刷新模型列表
+        输入: provider 列表, 测试提示词, ProxyState 对象, 是否刷新模型列表, 指定测试模型（可选）
         输出: 无（直接更新 state）
         """
         original_selected = state.get_selected_provider()
@@ -782,6 +790,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         # 1. 刷新模型列表（如果需要）
         if refresh_models:
             self._refresh_provider_models(providers, state)
+
+        # 记录测试结果
+        test_results = []
 
         # 2. 测试每个 provider
         for p in providers:
@@ -794,20 +805,53 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if not models:
                 logging.warning("test_batch: provider=%s no models available, skipping test", provider_name)
                 state.set_test_result(provider_name, False)
+                test_results.append({"provider": provider_name, "success": False, "error": "no models"})
                 continue
 
-            logging.info("test_batch: provider=%s using model=%s", provider_name, models[0])
+            # 选择测试模型：如果指定了 test_model 且在模型列表中，使用指定的；否则使用第一个
+            if test_model and test_model in models:
+                selected_model = test_model
+            else:
+                selected_model = models[0]
 
-            # 使用第一个模型进行测试
-            test_model = models[0]
+            logging.info("test_batch: provider=%s using model=%s", provider_name, selected_model)
+
             # 临时切换到这个 provider
             state.set_selected_provider(provider_name)
-            test_result = self._test_provider(test_model, prompt, state)
+            test_result = self._test_provider(selected_model, prompt, state)
             state.set_test_result(provider_name, test_result.get("success", False))
+
+            # 记录测试结果
+            test_results.append({
+                "provider": provider_name,
+                "success": test_result.get("success", False),
+                "elapsed": test_result.get("elapsed", 0),
+                "error": test_result.get("error", "")
+            })
 
         # 恢复原来选中的 provider
         if original_selected:
             state.set_selected_provider(original_selected.get("name", ""))
+
+        # 3. 输出测试汇总（按照实际测试顺序）
+        logging.info("=" * 60)
+        logging.info("test_batch: summary")
+        success_count = sum(1 for r in test_results if r["success"])
+        failed_count = len(test_results) - success_count
+        logging.info("  total: %d, success: %d, failed: %d", len(test_results), success_count, failed_count)
+
+        for r in test_results:
+            status = "✓" if r["success"] else "✗"
+            provider_name = r["provider"][:20].ljust(20)
+            elapsed = r.get("elapsed", 0)
+            error = r.get("error", "")
+
+            if r["success"]:
+                logging.info("  %s %s elapsed=%.1fs", status, provider_name, elapsed)
+            else:
+                error_msg = error[:50] if error else "unknown"
+                logging.info("  %s %s elapsed=%.1fs error=%s", status, provider_name, elapsed, error_msg)
+        logging.info("=" * 60)
 
     def _handle_refresh_and_test(self) -> None:
         """
@@ -930,7 +974,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         # 测试模式使用更短的超时时间
         if test_mode:
-            timeout = (5.0, 15.0)  # 连接超时 5 秒，读取超时 15 秒
+            timeout = (5.0, 30.0)  # 连接超时 5 秒，读取超时 30 秒
         else:
             timeout_ms = state.get_config("API_TIMEOUT_MS", "600000")
             try:
@@ -1049,20 +1093,27 @@ class ProxyHandler(BaseHTTPRequestHandler):
                             elif line.startswith("data:"):
                                 try:
                                     data = json.loads(line[5:].strip())
-                                    delta_type = data.get("delta", {}).get("type")
-                                    if event_type == "content_block_delta" and delta_type == "text_delta":
-                                        accumulated_text.append(data["delta"]["text"])
-                                    elif event_type == "content_block_delta" and delta_type == "thinking_delta":
-                                        accumulated_thinking.append(data["delta"]["thinking"])
+                                    # Chat Completions 格式
+                                    if "choices" in data:
+                                        content = data.get("choices", [{}])[0].get("delta", {}).get("content")
+                                        if content:
+                                            accumulated_text.append(content)
+                                    # Claude Messages 格式
                                     else:
-                                        if accumulated_text:
-                                            logging.info("  [content_block_delta] accumulated_text:\n%s", "".join(accumulated_text))
-                                            accumulated_text = []
-                                        if accumulated_thinking:
-                                            logging.info("  [content_block_delta] accumulated_thinking:\n%s", "".join(accumulated_thinking))
-                                            accumulated_thinking = []
-                                        data_str = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
-                                        logging.info("  [%s] %s", event_type or "data", data_str)
+                                        delta_type = data.get("delta", {}).get("type")
+                                        if event_type == "content_block_delta" and delta_type == "text_delta":
+                                            accumulated_text.append(data["delta"]["text"])
+                                        elif event_type == "content_block_delta" and delta_type == "thinking_delta":
+                                            accumulated_thinking.append(data["delta"]["thinking"])
+                                        else:
+                                            if accumulated_text:
+                                                logging.info("  [content_block_delta] accumulated_text:\n%s", "".join(accumulated_text))
+                                                accumulated_text = []
+                                            if accumulated_thinking:
+                                                logging.info("  [content_block_delta] accumulated_thinking:\n%s", "".join(accumulated_thinking))
+                                                accumulated_thinking = []
+                                            data_str = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
+                                            logging.info("  [%s] %s", event_type or "data", data_str)
                                 except:
                                     logging.info("  [%s] %s", event_type or "data", line[5:].strip())
                     if accumulated_text:
@@ -1084,7 +1135,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         """
         测试当前选中的 provider
         输入: 测试模型, 测试提示词, ProxyState 对象
-        输出: 测试结果字典
+        输出: 测试结果字典（包含 success, status, error, elapsed）
         """
         provider = state.get_selected_provider()
         if not provider:
@@ -1092,11 +1143,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         provider_override = state.get_provider_override(provider.get("name", ""))
         provider_name = provider.get("name", "")
+        api_base_url = provider.get("api_base_url", "")
 
         logging.info("test: provider=%s model=%s prompt=%s", provider_name, model, prompt[:50])
 
-        # 1. 构造测试请求 - 最小化请求，让 Override 框架注入其他字段
-        # 只有 prompt 从网页获取，其他字段通过 config.json 的 RequestOverrides 注入
+        # 记录开始时间
+        start_time = time.time()
+
+        # 1. 构造测试请求 - 根据端点类型选择格式
         provider_token = provider.get("token") or provider.get("api_key") or ""
         client_headers = {
             "Authorization": provider_token,
@@ -1104,41 +1158,76 @@ class ProxyHandler(BaseHTTPRequestHandler):
         }
         client_query = ""
 
-        # 最小化的请求体，只包含核心业务字段
-        # 在 Override 模式: system, tools, metadata 等将通过 RequestOverrides 注入
-        request_data = {
-            "model": model,
-            "messages": [{
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": prompt
+        # 根据端点类型构造不同格式的请求
+        if "/v1/chat/completions" in api_base_url:
+            # OpenAI Chat Completions 格式
+            request_data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}]
+            }
+        elif "/v1/messages" in api_base_url:
+            # Claude Messages 格式
+            request_data = {
+                "model": model,
+                "messages": [{
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}]
                 }]
-            }]
-        }
+            }
+        else:
+            # 默认使用 Claude Messages 格式
+            request_data = {
+                "model": model,
+                "messages": [{
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}]
+                }]
+            }
 
         client_body = json.dumps(request_data, separators=(',', ':')).encode("utf-8")
 
+        # 2. 测试时根据端点类型自动选择覆写配置
+        test_override = dict(provider_override)
+        if "/v1/chat/completions" in api_base_url:
+            test_override["request_override"] = "OpenAI"
+            test_override["header_override"] = "OpenAI"
+            test_override["token_in"] = "header"
+            test_override["token_header_format"] = "{token}"
+            test_override["query_params"] = ""
+        elif "/v1/messages" in api_base_url:
+            test_override["request_override"] = "ClaudeCode"
+            test_override["header_override"] = "ClaudeCode"
+            test_override["token_in"] = "header"
+            test_override["token_header_format"] = "{token}"
+            test_override["query_params"] = "beta=true"
+
         try:
-            # 2. 转发处理（复用核心逻辑，使用测试模式的短超时）
-            resp = self._forward_to_upstream(provider, provider_override, client_headers, client_query, client_body, state, test_mode=True)
+            # 3. 转发处理（复用核心逻辑，使用测试模式的短超时）
+            resp = self._forward_to_upstream(provider, test_override, client_headers, client_query, client_body, state, test_mode=True)
 
-            # 3. 读取并记录响应内容（复用统一的日志记录逻辑）
+            # 4. 测试模式下只读取部分响应内容用于日志，避免超时
             try:
-                response_content = resp.content
-                self._log_response_content(response_content, "test")
+                # 只读取前 2KB 的响应内容
+                partial_content = resp.raw.read(2048)
+                if partial_content:
+                    logging.info("test: provider=%s received response (partial, %d bytes)", provider_name, len(partial_content))
+                    self._log_response_content(partial_content, "test")
             except Exception as e:
-                logging.warning("test: failed to read response content: %s", str(e))
+                logging.info("test: provider=%s received response (unable to read content: %s)", provider_name, str(e))
 
-            # 4. 返回结果
+            # 计算响应时间
+            elapsed = time.time() - start_time
+
+            # 5. 返回结果（只要收到响应就认为成功）
             if resp.status_code == 200:
-                logging.info("test: provider=%s success", provider_name)
-                return {"success": True, "status": resp.status_code}
-            logging.warning("test: provider=%s failed status=%d", provider_name, resp.status_code)
-            return {"success": False, "status": resp.status_code, "error": "see logs"}
+                logging.info("test: provider=%s success elapsed=%.1fs", provider_name, elapsed)
+                return {"success": True, "status": resp.status_code, "elapsed": elapsed}
+            logging.warning("test: provider=%s failed status=%d elapsed=%.1fs", provider_name, resp.status_code, elapsed)
+            return {"success": False, "status": resp.status_code, "error": "see logs", "elapsed": elapsed}
         except Exception as exc:
-            logging.error("test: provider=%s error=%s", provider_name, str(exc)[:200])
-            return {"success": False, "error": str(exc)[:200]}
+            elapsed = time.time() - start_time
+            logging.error("test: provider=%s error=%s elapsed=%.1fs", provider_name, str(exc)[:200], elapsed)
+            return {"success": False, "error": str(exc)[:200], "elapsed": elapsed}
 
     def _proxy_messages(self) -> None:
         """
