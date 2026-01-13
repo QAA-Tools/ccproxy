@@ -431,25 +431,16 @@ refreshAndTestBtn.addEventListener("click", async () => {
   refreshAndTestBtn.disabled = true;
   refreshAndTestBtn.textContent = "Running...";
   try {
-    const res = await fetch("/api/refresh-and-test", {
+    await fetch("/api/refresh-and-test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
     });
-    const result = await res.json();
-    console.log("Refresh & Test results:", result.results);
-    refreshAndTestBtn.textContent = "✓ Done";
-    setTimeout(() => {
-      refreshAndTestBtn.textContent = "Refresh & Test";
-    }, 2000);
   } catch (err) {
-    console.error(err);
-    refreshAndTestBtn.textContent = "✗ Error";
-    setTimeout(() => {
-      refreshAndTestBtn.textContent = "Refresh & Test";
-    }, 2000);
+    console.error("Refresh & Test error:", err);
   } finally {
     refreshAndTestBtn.disabled = false;
+    refreshAndTestBtn.textContent = "Refresh & Test All";
   }
   await refresh();
 });
@@ -464,25 +455,16 @@ retestFailedBtn.addEventListener("click", async () => {
   retestFailedBtn.disabled = true;
   retestFailedBtn.textContent = "Running...";
   try {
-    const res = await fetch("/api/retest-failed", {
+    await fetch("/api/retest-failed", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
     });
-    const result = await res.json();
-    console.log("Retest Failed results:", result);
-    retestFailedBtn.textContent = "✓ Done";
-    setTimeout(() => {
-      retestFailedBtn.textContent = "Retest Failed";
-    }, 2000);
   } catch (err) {
-    console.error(err);
-    retestFailedBtn.textContent = "✗ Error";
-    setTimeout(() => {
-      retestFailedBtn.textContent = "Retest Failed";
-    }, 2000);
+    console.error("Retest Failed error:", err);
   } finally {
     retestFailedBtn.disabled = false;
+    retestFailedBtn.textContent = "Retest Failed";
   }
   await refresh();
 });
@@ -593,23 +575,16 @@ testBtn.addEventListener("click", async () => {
   testBtn.disabled = true;
   testBtn.textContent = "Testing...";
   try {
-    const res = await fetch("/api/test-provider", {
+    await fetch("/api/test-provider", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider, model, prompt }),
     });
-    const result = await res.json();
-    testBtn.textContent = result.success ? "✓ Success" : "✗ Failed";
-    setTimeout(() => {
-      testBtn.textContent = "Test";
-    }, 2000);
   } catch (err) {
-    testBtn.textContent = "✗ Error";
-    setTimeout(() => {
-      testBtn.textContent = "Test";
-    }, 2000);
+    console.error("Test error:", err);
   } finally {
     testBtn.disabled = false;
+    testBtn.textContent = "Test";
   }
   await refresh();
 });

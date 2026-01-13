@@ -592,6 +592,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 "global_env_models": state.get_config("env-models", {}),
             }
             return self._send_json(payload)
+        if path == "/v1/models":
+            return self._handle_models()
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
 
     def do_POST(self) -> None:
@@ -641,6 +643,34 @@ class ProxyHandler(BaseHTTPRequestHandler):
             selected = state.get_selected_provider()
             return self._send_json({"selected_provider": selected.get("name") if selected else ""})
         return self._send_json({"error": "unknown_provider"}, status=400)
+
+    def _handle_models(self) -> None:
+        """
+        处理 /v1/models 请求，返回当前选中 provider 的模型列表
+        输入: 无
+        输出: 无（直接写入响应）
+        """
+        state: ProxyState = self.server.state
+        provider = state.get_selected_provider()
+        if not provider:
+            return self._send_json({"error": "no_provider_selected"}, status=503)
+
+        models = provider.get("models", [])
+        # 构造 OpenAI API 格式的响应
+        data = []
+        for model_id in models:
+            data.append({
+                "id": model_id,
+                "object": "model",
+                "created": 0,
+                "owned_by": provider.get("name", "unknown")
+            })
+
+        payload = {
+            "object": "list",
+            "data": data
+        }
+        return self._send_json(payload)
 
     def _refresh_provider_models(self, providers: List[Dict[str, Any]], state: ProxyState) -> List[Dict[str, Any]]:
         """
