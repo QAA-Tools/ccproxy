@@ -22,6 +22,7 @@ const tokenHeaderEl = document.getElementById("tokenHeader");
 const tokenHeaderFormatEl = document.getElementById("tokenHeaderFormat");
 const applyAuthBtn = document.getElementById("applyAuth");
 const presetClaudeCLIBtn = document.getElementById("presetClaudeCLI");
+const presetOpenAIBtn = document.getElementById("presetOpenAI");
 const presetDefaultBtn = document.getElementById("presetDefault");
 const presetQueryBtn = document.getElementById("presetQuery");
 const presetBearerBtn = document.getElementById("presetBearer");
@@ -512,6 +513,20 @@ presetClaudeCLIBtn.addEventListener("click", () => {
     requestOverrideEl.value = requestOverrideEl.options[0].value;
   }
   queryParamsEl.value = "beta=true";
+  tokenHeaderEl.value = "Authorization";
+  tokenHeaderFormatEl.value = "{token}";
+});
+
+presetOpenAIBtn.addEventListener("click", () => {
+  tokenInEl.value = "header";
+  // 选择第二个选项（CherryStudio 和 OpenAI）
+  if (headerOverrideEl.options.length > 1) {
+    headerOverrideEl.value = headerOverrideEl.options[1].value;
+  }
+  if (requestOverrideEl.options.length > 1) {
+    requestOverrideEl.value = requestOverrideEl.options[1].value;
+  }
+  queryParamsEl.value = "";
   tokenHeaderEl.value = "Authorization";
   tokenHeaderFormatEl.value = "{token}";
 });

@@ -471,7 +471,11 @@
             </table>
 
             <div class="alert alert-success">
-                <strong><span class="spoiler">保活说明：</span></strong>测试功能可用于<span class="spoiler">保持账户活跃</span>。建议先点击 <code>Preset: Claude CLI</code> 选择预设，再点击 <code>Apply</code> 应用配置，然后使用 <code>Refresh &amp; Test All</code> 或 <code>Retest Failed</code> 批量测试所有 provider，<span class="spoiler">通过模仿 Claude Code 客户端发送请求来保持账户活跃</span>。
+                <strong><span class="spoiler">保活说明：</span></strong>测试功能可用于<span class="spoiler">保持账户活跃</span>。测试时会自动根据端点类型选择正确的 RequestOverride（<code>/v1/messages</code> 使用 <code>ClaudeCode</code>，<code>/v1/chat/completions</code> 使用 <code>OpenAI</code>），直接使用 <code>Refresh &amp; Test All</code> 或 <code>Retest Failed</code> 批量测试所有 provider 即可，<span class="spoiler">通过模仿真实客户端发送请求来保持账户活跃</span>。
+            </div>
+
+            <div class="alert alert-info">
+                <strong>注意：</strong>Provider Test 会自动根据端点类型选择覆写配置，<strong>忽略网页上配置的 HTTP Overrides</strong>。网页上的 HTTP Overrides (Selected Provider) 仅用于正常的代理转发，不影响测试功能。
             </div>
         </section>
 
