@@ -13,6 +13,7 @@
 - **HTTP 覆写** - 支持客户端特征伪装，绕过站点检测
 - **批量测试** - Refresh & Test 一键测试所有供应商
 - **热重载** - 修改配置后通过 UI 重新加载
+- **多端点支持** - 支持 `/v1/messages`、`/v1/chat/completions` 和 `/v1/responses` 端点
 
 ## 快速开始
 

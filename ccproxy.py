@@ -40,6 +40,8 @@ def extract_base_url(api_base_url: str) -> str:
         return api_base_url.replace("/v1/chat/completions", "")
     if "/v1/messages" in api_base_url:
         return api_base_url.replace("/v1/messages", "")
+    if "/v1/responses" in api_base_url:
+        return api_base_url.replace("/v1/responses", "")
     return api_base_url.rstrip("/")
 
 
@@ -272,7 +274,8 @@ class ProxyRequest:
             for k, v in self.client_headers.items():
                 if k.lower() not in HOP_HEADERS:
                     if self.client_apikey and self.client_apikey in v:
-                        headers[k] = self.provider_token
+                        # 保留原有格式（如 Bearer 前缀），只替换 token
+                        headers[k] = v.replace(self.client_apikey, self.provider_token)
                     else:
                         headers[k] = v
         else:
@@ -624,6 +627,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if path == "/v1/messages":
             return self._proxy_messages()
         if path == "/v1/chat/completions":
+            return self._proxy_messages()
+        if path == "/v1/responses":
             return self._proxy_messages()
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
 
@@ -1195,6 +1200,12 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}]
             }
+        elif "/v1/responses" in api_base_url:
+            # OpenAI Responses 格式
+            request_data = {
+                "model": model,
+                "input": [{"role": "user", "content": prompt}]
+            }
         elif "/v1/messages" in api_base_url:
             # Claude Messages 格式
             request_data = {
@@ -1222,7 +1233,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
             test_override["request_override"] = "OpenAI"
             test_override["header_override"] = "OpenAI"
             test_override["token_in"] = "header"
-            test_override["token_header_format"] = "{token}"
+            test_override["token_header_format"] = "Bearer {token}"
+            test_override["query_params"] = ""
+        elif "/v1/responses" in api_base_url:
+            test_override["request_override"] = "OpenAI"
+            test_override["header_override"] = "OpenAI"
+            test_override["token_in"] = "header"
+            test_override["token_header_format"] = "Bearer {token}"
             test_override["query_params"] = ""
         elif "/v1/messages" in api_base_url:
             test_override["request_override"] = "ClaudeCode"

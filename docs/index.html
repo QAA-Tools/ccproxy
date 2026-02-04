@@ -330,7 +330,7 @@
                 </tr>
                 <tr>
                     <td><code>api_base_url</code></td>
-                    <td>上游 API 地址（通常以 /v1/messages 结尾）</td>
+                    <td>上游 API 地址（支持 /v1/messages、/v1/chat/completions、/v1/responses 端点）</td>
                 </tr>
                 <tr>
                     <td><code>api_key</code></td>
@@ -513,7 +513,7 @@
             </div>
 
             <div class="alert alert-info">
-                <strong>测试机制：</strong>请求体仅包含 model（来自 Test Model 输入框或 provider 的第一个模型）和 messages（由 Test Prompt 输入框内容构造），自动应用对应的覆写预设（<code>/v1/messages</code> 使用 ClaudeCode 预设 + <code>beta=true</code>，<code>/v1/chat/completions</code> 使用 OpenAI 预设）。<span class="spoiler">因为测试机制是通过模仿真实客户端发送请求，所以测试功能可用于保持账户活跃。</span>
+                <strong>测试机制：</strong>请求体根据端点类型自动构造（<code>/v1/messages</code> 使用 Claude Messages 格式，<code>/v1/chat/completions</code> 使用 OpenAI Chat Completions 格式，<code>/v1/responses</code> 使用 OpenAI Responses 格式），自动应用对应的覆写预设（<code>/v1/messages</code> 使用 ClaudeCode 预设 + <code>beta=true</code>，<code>/v1/chat/completions</code> 和 <code>/v1/responses</code> 使用 OpenAI 预设 + <code>Bearer</code> 认证）。<span class="spoiler">因为测试机制是通过模仿真实客户端发送请求，所以测试功能可用于保持账户活跃。</span>
             </div>
         </section>
 
@@ -540,7 +540,7 @@
 
                 <div class="card">
                     <h4>场景 3：OpenAI 格式端点</h4>
-                    <p>如果 provider 使用 OpenAI 格式的端点（<code>/v1/chat/completions</code>），使用 OpenAI 预设可以正确转换请求格式。</p>
+                    <p>如果 provider 使用 OpenAI 格式的端点（<code>/v1/chat/completions</code> 或 <code>/v1/responses</code>），使用 OpenAI 预设可以正确转换请求格式和认证方式（Bearer token）。</p>
                     <p><strong>配置：</strong>点击 <code>Preset: OpenAI</code> 按钮，然后点击 <code>Apply</code></p>
                 </div>
 

@@ -13,6 +13,7 @@ A lightweight Claude API reverse proxy providing Web UI to manage multiple provi
 - **HTTP Overrides** - Spoof client characteristics to bypass site detection
 - **Batch Testing** - Refresh & Test all providers in one click
 - **Hot Reload** - Reload config changes via UI
+- **Multi-Endpoint Support** - Support `/v1/messages`, `/v1/chat/completions`, and `/v1/responses` endpoints
 
 ## Quick Start
 
